@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>생두 정보 관리 도구 2026.7.12</title>
+    <style>
+        body { font-family: 'Malgun Gothic', sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 1500px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; text-align: center; }
+        .auth-section { text-align: center; margin-bottom: 20px; padding: 20px; background-color: #e8f4f8; border-radius: 8px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; color: white; margin: 5px; }
+        .btn-login { background-color: #4285F4; display: none; } 
+        .btn-logout { background-color: #ea4335; display: none; }
+        .btn-guide { background-color: #7f8c8d; display: none; } 
+        .dashboard { display: none; }
+        .nav-buttons { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ecf0f1; padding-bottom: 15px; }
+        .nav-btn { background-color: #95a5a6; padding: 10px 15px; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .nav-btn.active { background-color: #2c3e50; }
+        
+        /* 테이블 & 가로 스크롤 스타일 */
+        .table-wrapper { overflow-x: auto; background: #fff; border: 1px solid #bdc3c7; border-radius: 4px; margin-bottom: 30px;}
+        table { width: max-content; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
+        th { background-color: #2c3e50; color: white; padding: 10px 15px; text-align: center; border-right: 1px solid #34495e; position: sticky; top: 0;}
+        td { padding: 10px 15px; border-right: 1px solid #ecf0f1; border-bottom: 1px solid #ecf0f1; text-align: center; }
+        tr:hover { background-color: #f1f8ff; }
+        
+        /* 상태 뱃지 */
+        .badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; color: white; display: inline-block;}
+        .badge-in { background-color: #27ae60; }
+        .badge-out { background-color: #7f8c8d; }
+
+        /* 입력 폼 스타일 */
+        .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; background: #fdfdfd; padding: 20px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 15px;}
+        .form-group { display: flex; flex-direction: column; }
+        .form-group label { font-weight: bold; font-size: 13px; margin-bottom: 5px; color: #555;}
+        .form-group input, .form-group select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        .form-group.full-width { grid-column: span 3; }
+        
+        .submit-btn { background-color: #27ae60; color: white; padding: 12px 20px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 10px; width: 100%; font-size: 16px;}
+        .submit-btn:hover { background-color: #219a52; }
+        
+        /* 상세보기 및 업데이트 영역 */
+        .detail-box { background: #f8f9fa; border: 2px solid #2c3e50; padding: 25px; border-radius: 8px; margin-top: 20px; }
+        .detail-title { border-bottom: 2px solid #2c3e50; padding-bottom: 10px; margin-top: 0; color: #2c3e50; display: flex; justify-content: space-between; align-items: center;}
+        
+        /* 시트 설정 세션 */
+        .config-box { background: #fffaf0; border: 1px dashed #e67e22; padding: 15px; border-radius: 6px; margin-bottom: 15px; display: flex; align-items: center; gap: 15px;}
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🌱 생두 정보 관리 도구 2026.7.12</h1>
+    
+    <div class="auth-section" id="authSection">
+        <p id="authMessage">구글 라이브러리를 불러오는 중입니다. 잠시만 기다려주세요...</p>
+        <button class="btn btn-login" id="loginBtn" onclick="handleAuthClick()">구글 계정으로 연동하기</button>
+        <button class="btn btn-logout" id="logoutBtn" onclick="handleSignoutClick()">로그아웃</button>
+        <br>
+        <button class="btn btn-guide" id="guideToggleBtn" onclick="toggleUserGuide()">처음 사용자 가이드 보기 📖</button>
+
+        <div id="userGuideSection" style="display: none; margin-top: 25px; padding: 20px; background: white; border: 1px solid #cbd5e0; border-radius: 6px; text-align: left; max-width: 650px; margin-left: auto; margin-right: auto; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+            <h3 style="margin-top: 0; color: #2c3e50; font-size: 15px; border-bottom: 2px solid #edf2f7; padding-bottom: 8px;">📖 처음 사용자를 위한 원격 연동 가이드</h3>
+            <ul style="font-size: 13px; line-height: 1.6; color: #4a5568; padding-left: 20px; margin-bottom: 0;">
+                <li style="margin-bottom: 10px;">
+                    <strong>1단계: 시스템 베이스 템플릿 사본 저장</strong><br>
+                    이 도구를 이용하려면 규격화된 데이터 시트 양식이 필요합니다. 아래 링크를 눌러 시트가 열리면 상단 메뉴의 <strong>[파일] ➔ [사본 만들기]</strong>를 눌러 본인의 구글 드라이브에 저장해 주세요.<br>
+                    👉 <a href="https://docs.google.com/spreadsheets/d/1LuQMv2Wh4hsrd85uxvk1CCKahX70luskQ6ZshJtEKoI/edit?usp=sharing" target="_blank" style="color: #27ae60; font-weight: bold; text-decoration: underline;">[생두 관리 스프레드시트 템플릿 열기 🔗]</a>
+                </li>
+                <li style="margin-bottom: 10px;">
+                    <strong>2단계: 나만의 시트 고유 ID 확인</strong><br>
+                    사본으로 저장된 개인 스프레드시트의 인터넷 주소창을 확인합니다.<br>
+                    주소창 고유 경로 중 <code style="background: #f7fafc; padding: 2px 4px; border: 1px solid #e2e8f0; color: #e53e3e; font-size:11px;">/spreadsheets/d/</code> 와 <code style="background: #f7fafc; padding: 2px 4px; border: 1px solid #e2e8f0; color: #e53e3e; font-size:11px;">/edit</code> 사이에 위치한 <strong>영문 숫자 문자열</strong>이 시트 ID입니다.
+                </li>
+                <li style="margin-bottom: 10px;">
+                    <strong>3단계: 로그인 후 ID 기입 연동 완료</strong><br>
+                    상단의 [구글 계정으로 연동하기] 버튼을 통해 로그인하면 개인 시트 ID를 입력하는 제어창이 나타납니다. 복사한 고유 ID를 붙여넣고 저장하면 완료됩니다.<br>
+                    👉 <a href="https://docs.google.com/document/d/1xQ2ihSkLuayhvodP7OPqPpeYXpnxHRBJhindK3xTvyE/edit?usp=sharing" target="_blank" style="color: #2980b9; font-weight: bold; text-decoration: underline;">[도구 상세 사용설명서 매뉴얼 보기 🔗]</a>
+                </li>
+                <li>
+                    <strong>⚠️ 중요: 'Google에서 확인하지 않은 앱' 경고창 대처법</strong><br>
+                    처음 계정 연동을 시도할 때 해당 경고창이 나타나는 경우, 당황하지 마시고 화면 왼쪽 아래의 <strong>[고급]</strong> 문구를 클릭한 후, 활성화되는 <strong>[생두 관리 데이터베이스로 이동(안전하지 않음)]</strong>을 선택해 주시면 정상 진행됩니다.
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="dashboard" id="dashboardSection">
+        <div class="config-box">
+            <div style="flex: 1;">
+                <label style="font-weight: bold; font-size: 13px; color: #d35400; display: block; margin-bottom: 5px;">📋 나의 개인 구글 스프레드시트 ID 연동</label>
+                <input type="text" id="global_sheet_id" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px;" placeholder="구글 시트 주소창의 /d/와 /edit 사이의 문자열을 입력하세요">
+            </div>
+            <button class="btn" style="background-color: #e67e22; margin-top: 20px;" onclick="saveConfigSheetId()">시트 주소 저장/변경</button>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="nav-btn active" id="btn-list" onclick="showTab('list')">목록 보기</button>
+            <button class="nav-btn" id="btn-addBean" style="background-color: #27ae60;" onclick="showTab('addBean')">+ 새 생두 등록</button>
+        </div>
+
+        <div id="view-list">
+            <details style="background: #edf2f7; padding: 15px; border-radius: 6px; margin-bottom: 15px;" open>
+                <summary style="font-weight: bold; cursor: pointer; color: #2c3e50; font-size: 14px;">📊 메인 표 표시 항목 설정 (클릭하여 여닫기)</summary>
+                <div style="margin-top: 12px;">
+                    <strong style="color: #4a5568; font-size: 13px; display: block; margin-bottom: 5px;">기본 표시 항목 (체크 해제 시 본문에서 숨김)</strong>
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; font-size: 12px; background: white; padding: 10px; border-radius: 4px; border: 1px solid #e2e8f0;">
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-stock" checked onchange="applyColumnVisibility()"> 잔여량</label>
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-year" checked onchange="applyColumnVisibility()"> 생산 연도</label>
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-buydate" checked onchange="applyColumnVisibility()"> 구매일자</label>
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-price" checked onchange="applyColumnVisibility()"> 단가</label>
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-indate" checked onchange="applyColumnVisibility()"> 최종 입고일자</label>
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-country" checked onchange="applyColumnVisibility()"> 생산국</label>
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-region" checked onchange="applyColumnVisibility()"> 상세 지역</label>
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-farm" checked onchange="applyColumnVisibility()"> 농장/조합</label>
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-producer" checked onchange="applyColumnVisibility()"> 생산자</label>
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-altavg" checked onchange="applyColumnVisibility()"> 평균 재배고도</label>
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-variety" checked onchange="applyColumnVisibility()"> 품종</label>
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-process" checked onchange="applyColumnVisibility()"> 가공</label>
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-importer" checked onchange="applyColumnVisibility()"> 수입사</label>
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-usage" checked onchange="applyColumnVisibility()"> 생두 용도</label>
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-note" checked onchange="applyColumnVisibility()"> 부가 정보</label>
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-mdate" checked onchange="applyColumnVisibility()"> 최종 측정일자</label>
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-density" checked onchange="applyColumnVisibility()"> 밀도(g/L)</label>
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-density-pct" checked onchange="applyColumnVisibility()"> 밀도(백분위)</label>
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-density-avg" checked onchange="applyColumnVisibility()"> 밀도(평균)</label>
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-moisture" checked onchange="applyColumnVisibility()"> 수분(%)</label>
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-moisture-pct" checked onchange="applyColumnVisibility()"> 수분(백분위)</label>
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-moisture-avg" checked onchange="applyColumnVisibility()"> 수분(평균)</label>
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-size" checked onchange="applyColumnVisibility()"> 크기</label>
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-etc" checked onchange="applyColumnVisibility()"> 기타</label>
+                    </div>
+                </div>
+                <div style="margin-top: 10px;">
+                    <strong style="color: #4a5568; font-size: 13px; display: block; margin-bottom: 5px;">기본 미표시 항목 (체크 시 활성화되어 본문에 노출)</strong>
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; font-size: 12px; background: white; padding: 10px; border-radius: 4px; border: 1px solid #e2e8f0;">
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-altmin" onchange="applyColumnVisibility()"> 재배고도 최저</label>
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-altmax" onchange="applyColumnVisibility()"> 재배고도 최고</label>
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-id" onchange="applyColumnVisibility()"> 고유 ID</label>
+                    </div>
+                </div>
+            </details>
+
+            <div id="listContentArea"></div>
+            <div id="detailContentArea"></div>
+        </div>
+
+        <div id="view-addBean" style="display: none;">
+            <h2 style="color: #27ae60; margin-top: 0;">+ 새 생두 등록하기</h2>
+            <div class="form-grid">
+                <div class="form-group full-width">
+                    <label>커피 이름 (필수)</label><input type="text" id="bean_name" placeholder="">
+                </div>
+                <div class="form-group">
+                    <label>초기 입고량(kg)</label><input type="number" id="bean_stock" placeholder="예: 20" value="0">
+                </div>
+                <div class="form-group">
+                    <label>구매 단가(원)</label><input type="number" id="bean_price" placeholder="예: 25000">
+                </div>
+                <div class="form-group">
+                    <label>구매 일자</label><input type="date" id="bean_buyDate">
+                </div>
+                <div class="form-group">
+                    <label>창고 입고 일자</label><input type="date" id="bean_inDate">
+                </div>
+                <div class="form-group">
+                    <label>생산 연도 (크롭)</label><input type="text" id="bean_year" placeholder="예: 23/24">
+                </div>
+                <div class="form-group">
+                    <label>생산국</label><input type="text" id="bean_country" placeholder="">
+                </div>
+                <div class="form-group">
+                    <label>상세 지역</label><input type="text" id="bean_region" placeholder="">
+                </div>
+                <div class="form-group">
+                    <label>농장/조합</label><input type="text" id="bean_farm" placeholder="">
+                </div>
+                <div class="form-group">
+                    <label>생산자</label><input type="text" id="bean_producer" placeholder="">
+                </div>
+                <div class="form-group">
+                    <label>재배고도 최저(m)</label><input type="number" id="bean_altMin" placeholder="예: 1800">
+                </div>
+                <div class="form-group">
+                    <label>재배고도 최고(m)</label><input type="number" id="bean_altMax" placeholder="예: 2100">
+                </div>
+                <div class="form-group">
+                    <label>품종</label><input type="text" id="bean_variety" placeholder="">
+                </div>
+                <div class="form-group">
+                    <label>가공 방식</label><input type="text" id="bean_process" placeholder="">
+                </div>
+                <div class="form-group">
+                    <label>수입사</label><input type="text" id="bean_importer" placeholder="">
+                </div>
+                <div class="form-group">
+                    <label>생두 용도</label><input type="text" id="bean_usage" placeholder="예: 블렌딩, 싱글 오리진, 테스트 등">
+                </div>
+                <div class="form-group full-width">
+                    <label>부가 정보</label> <input type="text" id="bean_note" placeholder="예: 노트, 보관 상태 등의 특이사항 기재">
+                </div>
+            </div>
+            <button class="submit-btn" onclick="saveNewBean()">💾 구글 시트에 저장하기</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_KEY = 'AIzaSyCGFgzDIM4YGpfOXq_KRrGAlXZMKRK6aHk'; 
+    const CLIENT_ID = '655724290696-t2rkigmu063or0ki2vtfb8ba5k8v58fk.apps.googleusercontent.com'; 
+    let SPREADSHEET_ID = ''; 
+
+    const DISCOVERY_DOC = 'https://sheets.googleapis.com/$discovery/rest?version=v4';
+    const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
+
+    let tokenClient; let gapiInited = false; let gisInited = false;
+    let globalCachedRows = [];     
+    let globalBeanLogs = {};       
+    let globalBeanAverages = {};   
+
+    function gapiLoaded() { gapi.load('client', initializeGapiClient); }
+    async function initializeGapiClient() {
+        try {
+            await gapi.client.init({ apiKey: API_KEY, discoveryDocs: [DISCOVERY_DOC] });
+            gapiInited = true; maybeEnableButtons();
+        } catch (err) { document.getElementById('authMessage').innerText = "오류: 구글 API 초기화 실패."; }
+    }
+    function gisLoaded() {
+        try {
+            tokenClient = google.accounts.oauth2.initTokenClient({ client_id: CLIENT_ID, scope: SCOPES, callback: '' });
+            gisInited = true; maybeEnableButtons();
+        } catch (err) { document.getElementById('authMessage').innerText = "오류: 로그인 라이브러리 초기화 실패."; }
+    }
+    function maybeEnableButtons() {
+        if (gapiInited && gisInited) { 
+            document.getElementById('authMessage').innerText = "데이터를 불러오려면 구글 계정으로 로그인해 주세요.";
+            document.getElementById('loginBtn').style.display = 'inline-block'; 
+            document.getElementById('guideToggleBtn').style.display = 'inline-block'; 
+        }
+    }
+
+    function toggleUserGuide() {
+        const guideSection = document.getElementById('userGuideSection');
+        const btn = document.getElementById('guideToggleBtn');
+        if (guideSection.style.display === 'none') {
+            guideSection.style.display = 'block';
+            btn.innerText = '가이드 닫기 ✖️';
+        } else {
+            guideSection.style.display = 'none';
+            btn.innerText = '처음 사용자 가이드 보기 📖';
+        }
+    }
+
+    function handleAuthClick() {
+        if (!tokenClient) { alert("구글 라이브러리가 준비되지 않았습니다."); return; }
+        tokenClient.callback = async (resp) => {
+            if (resp.error !== undefined) { throw (resp); }
+            document.getElementById('loginBtn').style.display = 'none';
+            document.getElementById('guideToggleBtn').style.display = 'none'; 
+            document.getElementById('userGuideSection').style.display = 'none'; 
+            document.getElementById('logoutBtn').style.display = 'inline-block';
+            document.getElementById('dashboardSection').style.display = 'block';
+            document.getElementById('authMessage').innerText = "연동 완료! 현재 구글 시트와 연결되어 있습니다.";
+            
+            const savedId = localStorage.getItem('GB_TRACKER_SHEET_ID');
+            if(savedId) {
+                document.getElementById('global_sheet_id').value = savedId;
+                SPREADSHEET_ID = savedId;
+                showTab('list');
+            } else {
+                document.getElementById('listContentArea').innerHTML = '<h3 style="color: #e67e22;">📋 먼저 상단에 본인의 구글 스프레드시트 고유 ID를 입력하고 연동해 주세요!</h3>';
+            }
+        };
+        if (gapi.client.getToken() === null) { tokenClient.requestAccessToken({prompt: 'consent'}); } 
+        else { tokenClient.requestAccessToken({prompt: ''}); }
+    }
+
+    function saveConfigSheetId() {
+        const idVal = document.getElementById('global_sheet_id').value.trim();
+        if(!idVal) { alert("시트 고유 ID 문자열을 명확히 기입해 주세요!"); return; }
+        localStorage.setItem('GB_TRACKER_SHEET_ID', idVal);
+        SPREADSHEET_ID = idVal;
+        alert("시트 ID가 이 브라우저에 안전하게 기억되었습니다!");
+        showTab('list');
+    }
+
+    function handleSignoutClick() {
+        const token = gapi.client.getToken();
+        if (token !== null) {
+            google.accounts.oauth2.revoke(token.access_token);
+            gapi.client.setToken('');
+            document.getElementById('dashboardSection').style.display = 'none';
+            document.getElementById('loginBtn').style.display = 'inline-block';
+            document.getElementById('guideToggleBtn').style.display = 'inline-block'; 
+            document.getElementById('logoutBtn').style.display = 'none';
+        }
+    }
+
+    function showTab(tabName) {
+        document.getElementById('view-list').style.display = 'none';
+        document.getElementById('view-addBean').style.display = 'none';
+        document.getElementById('detailContentArea').innerHTML = ''; 
+        
+        if(tabName === 'list') {
+            document.getElementById('view-list').style.display = 'block';
+            if(SPREADSHEET_ID) fetchBeanList(); 
+        } else if(tabName === 'addBean') {
+            document.getElementById('view-addBean').style.display = 'block';
+            document.getElementById('bean_buyDate').valueAsDate = new Date(); 
+            document.getElementById('bean_inDate').valueAsDate = new Date();
+        }
+    }
+
+    function applyColumnVisibility() {
+        document.querySelectorAll('.col-toggle-checkbox').forEach(cb => {
+            const colClass = cb.dataset.col;
+            document.querySelectorAll('.' + colClass).forEach(el => {
+                el.style.display = cb.checked ? '' : 'none';
+            });
+        });
+    }
+
+    function getPercentileRankString(value, allAverages) {
+        const num = parseFloat(value);
+        if (isNaN(num) || allAverages.length <= 1) return '-';
+        const strictHigher = allAverages.filter(v => v > num).length;
+        const pct = Math.round((strictHigher / allAverages.length) * 100);
+        return `상위 ${pct}%`;
+    }
+
+    async function fetchBeanList() {
+        if(!SPREADSHEET_ID) { alert("연동된 구글 시트 ID가 유실되었습니다."); return; }
+        document.getElementById('listContentArea').innerHTML = '<h3 style="color: #3498db;">🔄 구글 데이터베이스를 동기화하는 중입니다...</h3>';
+        try {
+            const response = await gapi.client.sheets.spreadsheets.values.batchGet({
+                spreadsheetId: SPREADSHEET_ID,
+                ranges: ['생두_마스터!A2:Y', '업데이트_로그!A2:M'] 
+            });
+            
+            const masterRows = response.result.valueRanges[0].values || [];
+            const logRows = response.result.valueRanges[1].values || [];
+            globalCachedRows = masterRows; 
+
+            globalBeanLogs = {};
+            logRows.forEach((row, idx) => {
+                const sheetIdx = idx + 2; const beanId = row[1] || ''; const status = row[12] || 'NORMAL'; 
+                if(!globalBeanLogs[beanId]) globalBeanLogs[beanId] = [];
+                globalBeanLogs[beanId].push({ sheetIdx: sheetIdx, data: row, status: status });
+            });
+
+            globalBeanAverages = {};
+            masterRows.forEach(row => {
+                const beanId = row[0]; const logs = globalBeanLogs[beanId] || []; const activeLogs = logs.filter(l => l.status !== 'HIDDEN');
+                const densities = activeLogs.map(l => parseFloat(l.data[8])).filter(v => !isNaN(v));
+                const moistures = activeLogs.map(l => parseFloat(l.data[9])).filter(v => !isNaN(v));
+                const avgD = densities.length > 0 ? densities.reduce((a,b)=>a+b,0) / densities.length : null;
+                const avgM = moistures.length > 0 ? moistures.reduce((a,b)=>a+b,0) / moistures.length : null;
+                globalBeanAverages[beanId] = { avgDensity: avgD, avgMoisture: avgM };
+            });
+
+            const allAvgDensities = Object.values(globalBeanAverages).map(b => b.avgDensity).filter(v => v !== null);
+            const allAvgMoistures = Object.values(globalBeanAverages).map(b => b.avgMoisture).filter(v => v !== null);
+
+            if (masterRows.length === 0) {
+                document.getElementById('listContentArea').innerHTML = '<h3>데이터가 없습니다. 새 생두를 등록해 주세요.</h3>'; return;
+            }
+
+            const sortedRows = [...masterRows].map((row, index) => ({ originalIndex: index + 2, data: row }));
+            sortedRows.sort((a, b) => {
+                let statusA = a.data[2] || ''; let statusB = b.data[2] || '';
+                if (statusA === 'O' && statusB !== 'O') return -1;
+                if (statusA !== 'O' && statusB === 'O') return 1;
+                return 0;
+            });
+
+            let html = `
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="background-color: #34495e; color:white; min-width:140px;">액션 제어</th><th>재고상태</th>
+                            <th style="min-width: 200px;">커피 이름</th><th class="col-stock">잔여량</th><th class="col-year">생산 연도</th>
+                            <th class="col-buydate">구매일자</th><th class="col-price">단가(원)</th><th class="col-indate">최종 입고일자</th>
+                            <th class="col-country">생산국</th><th class="col-region">상세 지역</th><th class="col-farm">농장/조합</th>
+                            <th class="col-producer">생산자</th><th class="col-altavg">평균 재배고도(m)</th><th class="col-variety">품종</th>
+                            <th class="col-process">가공</th><th class="col-importer">수입사</th><th class="col-usage">생두 용도</th>
+                            <th class="col-note">부가 정보</th><th class="col-mdate" style="background-color: #f39c12; color:white;">최종 측정일자</th>
+                            <th class="col-density" style="background-color: #f39c12; color:white;">밀도(g/L)</th><th class="col-density-pct" style="background-color: #f39c12; color:white;">밀도(백분위)</th>
+                            <th class="col-density-avg" style="background-color: #f39c12; color:white;">밀도(평균)</th><th class="col-moisture" style="background-color: #f39c12; color:white;">수분(%)</th>
+                            <th class="col-moisture-pct" style="background-color: #f39c12; color:white;">수분(백분위)</th><th class="col-moisture-avg" style="background-color: #f39c12; color:white;">수분(평균)</th>
+                            <th class="col-size" style="background-color: #f39c12; color:white;">크기</th><th class="col-etc" style="background-color: #f39c12; color:white;">기타</th>
+                            <th class="col-altmin">재배고도 최저(m)</th><th class="col-altmax">재배고도 최고(m)</th><th class="col-id">고유 ID</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+            sortedRows.forEach(item => {
+                const r = item.data; const rIdx = item.originalIndex;
+                const id = r[0]; const name = r[1] || '-'; const status = r[2] || 'X'; const stock = r[3] || '0';
+                const buyDate = r[4] || '-'; const price = r[5] || '-'; const inDate = r[6] || '-';
+                const year = r[7] || '-'; const country = r[8] || '-'; const region = r[9] || '-';
+                const farm = r[10] || '-'; const producer = r[11] || '-'; 
+                const altMin = r[12] || '-'; const altMax = r[13] || '-'; const altAvg = r[14] || '-';
+                const variety = r[15] || '-'; const process = r[16] || '-'; const importer = r[17] || '-';
+                const usage = r[18] || '-'; const note = r[19] || '-';
+                const lastMeasure = r[20] || '-'; const density = r[21] || '-'; const moisture = r[22] || '-';
+                const size = r[23] || '-'; const etc = r[24] || '-';
+
+                const badgeHtml = status === 'O' ? '<span class="badge badge-in">재고있음</span>' : '<span class="badge badge-out">소진됨</span>';
+                const priceFmt = !isNaN(price) && price !== '-' ? Number(price).toLocaleString() : price;
+                
+                const averages = globalBeanAverages[id] || { avgDensity: null, avgMoisture: null };
+                const dAvgDisp = averages.avgDensity !== null ? Math.round(averages.avgDensity) : '-';
+                const mAvgDisp = averages.avgMoisture !== null ? averages.avgMoisture.toFixed(1) : '-';
+                const dPctDisp = averages.avgDensity !== null ? getPercentileRankString(averages.avgDensity, allAvgDensities) : '-';
+                const mPctDisp = averages.avgMoisture !== null ? getPercentileRankString(averages.avgMoisture, allAvgMoistures) : '-';
+
+                html += `<tr>
+                            <td>
+                                <button onclick="viewBeanHistory(${rIdx})" style="padding:4px 6px; margin-right:3px; background:#34495e; color:white; border:none; border-radius:3px; cursor:pointer; font-weight:bold; font-size:11px;">상세보기 🔍</button>
+                                <button onclick="viewBeanUpdate(${rIdx})" style="padding:4px 6px; background:#e67e22; color:white; border:none; border-radius:3px; cursor:pointer; font-weight:bold; font-size:11px;">업데이트 ⚡</button>
+                            </td>
+                            <td>${badgeHtml}</td><td style="font-weight:bold; text-align:left;">${name}</td><td class="col-stock">${stock} kg</td>
+                            <td class="col-year">${year}</td><td class="col-buydate">${buyDate}</td><td class="col-price">${priceFmt}</td>
+                            <td class="col-indate">${inDate}</td><td class="col-country">${country}</td><td class="col-region">${region}</td>
+                            <td class="col-farm">${farm}</td><td class="col-producer">${producer}</td><td class="col-altavg">${altAvg}</td>
+                            <td class="col-variety">${variety}</td><td class="col-process">${process}</td><td class="col-importer">${importer}</td>
+                            <td class="col-usage">${usage}</td><td class="col-note" style="text-align:left; max-width:150px; overflow:hidden; text-overflow:ellipsis;">${note}</td>
+                            <td class="col-mdate" style="background-color: #fffaf0;">${lastMeasure}</td><td class="col-density" style="background-color: #fffaf0;">${density}</td>
+                            <td class="col-density-pct" style="background-color: #fffaf0; font-weight:bold; color:#d35400;">${dPctDisp}</td><td class="col-density-avg" style="background-color: #fffaf0; color:#7f8c8d;">${dAvgDisp}</td>
+                            <td class="col-moisture" style="background-color: #fffaf0;">${moisture}</td><td class="col-moisture-pct" style="background-color: #fffaf0; font-weight:bold; color:#16a085;">${mPctDisp}</td>
+                            <td class="col-moisture-avg" style="background-color: #fffaf0; color:#7f8c8d;">${mAvgDisp}</td><td class="col-size" style="background-color: #fffaf0;">${size}</td>
+                            <td class="col-etc" style="background-color: #fffaf0; text-align:left;">${etc}</td>
+                            <td class="col-altmin">${altMin}</td><td class="col-altmax">${altMax}</td><td class="col-id">${id}</td>
+                        </tr>`;
+            });
+            html += `</tbody></table></div>`;
+            document.getElementById('listContentArea').innerHTML = html;
+            applyColumnVisibility();
+        } catch (err) { console.error(err); }
+    }
+
+    function viewBeanHistory(sheetRowIndex) {
+        const rowData = globalCachedRows[sheetRowIndex - 2];
+        if(!rowData) return;
+        const beanId = rowData[0]; const name = rowData[1];
+        const logs = globalBeanLogs[beanId] || [];
+        let logsHtml = '';
+        
+        if(logs.length === 0) {
+            logsHtml = '<p style="color:#7f8c8d; font-style:italic; padding:10px;">기록된 업데이트 로그가 존재하지 않습니다.</p>';
+        } else {
+            logsHtml = `
+            <table style="width:100%; font-size:12px; margin-top:10px; background:white; white-space:normal;">
+                <thead>
+                    <tr style="background:#edf2f7; color:#2c3e50;">
+                        <th style="padding:8px; border:1px solid #cbd5e0;">표시 현황</th><th style="padding:8px; border:1px solid #cbd5e0;">날짜 정보</th>
+                        <th style="padding:8px; border:1px solid #cbd5e0;">재고 변동</th><th style="padding:8px; border:1px solid #cbd5e0;">밀도</th>
+                        <th style="padding:8px; border:1px solid #cbd5e0;">수분</th><th style="padding:8px; border:1px solid #cbd5e0;">크기</th>
+                        <th style="padding:8px; border:1px solid #cbd5e0;">특이사항</th><th style="padding:8px; border:1px solid #cbd5e0; background-color:#e2e8f0;">데이터 관리</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+            
+            logs.forEach(log => {
+                const isHidden = log.status === 'HIDDEN';
+                const rowStyle = isHidden ? 'style="opacity: 0.45; background:#f7fafc;"' : '';
+                const statusBadge = isHidden ? '<span style="color:#e53e3e; font-weight:bold;">[숨김 상태]</span>' : '<span style="color:#38a169; font-weight:bold;">[목록 표시중]</span>';
+                const btnActionText = isHidden ? '내역 복구 🔓' : '내역 숨기기 (삭제) 👁️‍🗨️';
+                const btnColor = isHidden ? '#3182ce' : '#e53e3e';
+                const dateVal = log.data[7] || log.data[5] || log.data[3] || '-';
+                const stockVal = log.data[2] !== '0' && log.data[2] ? log.data[2] + ' kg' : '-';
+                
+                logsHtml += `
+                    <tr ${rowStyle}>
+                        <td style="padding:8px; border:1px solid #e2e8f0; text-align:center;">${statusBadge}</td>
+                        <td style="padding:8px; border:1px solid #e2e8f0; text-align:center;">${dateVal}</td>
+                        <td style="padding:8px; border:1px solid #e2e8f0; text-align:center;">${stockVal}</td>
+                        <td style="padding:8px; border:1px solid #e2e8f0; text-align:center;">${log.data[8] || '-'}</td>
+                        <td style="padding:8px; border:1px solid #e2e8f0; text-align:center;">${log.data[9] ? log.data[9] + '%' : '-'}</td>
+                        <td style="padding:8px; border:1px solid #e2e8f0; text-align:center;">${log.data[10] || '-'}</td>
+                        <td style="padding:8px; border:1px solid #e2e8f0; text-align:left;">${log.data[11] || '-'}</td>
+                        <td style="padding:8px; border:1px solid #e2e8f0; text-align:center;">
+                            <button onclick="toggleLogVisibility(${log.sheetIdx}, '${log.status}', ${sheetRowIndex})" style="background:${btnColor}; color:white; border:none; padding:4px 8px; border-radius:3px; cursor:pointer; font-size:11px; font-weight:bold;">${btnActionText}</button>
+                        </td>
+                    </tr>`;
+            });
+            logsHtml += '</tbody></table>';
+        }
+
+        let detailHtml = `
+        <div class="detail-box" id="detailSectionTarget" style="border-color: #34495e;">
+            <div class="detail-title">
+                <span style="color:#34495e;">🔍 [업데이트 이력 확인 상세보기] ${name}</span>
+                <button onclick="document.getElementById('detailContentArea').innerHTML=''" style="background:#7f8c8d; color:white; border:none; padding:5px 10px; cursor:pointer; border-radius:4px; font-weight:bold;">창 닫기 X</button>
+            </div>
+            <h4 style="margin: 0 0 10px 0; color:#2c3e50;">📋 해당 생두의 누적 기록 타임라인</h4>
+            <p style="font-size:12px; color:#e53e3e; margin:0 0 10px 0;">* 내역 숨기기를 누르면 메인 화면의 평균치 계산 및 백분위 데이터 집단에서 즉시 제외됩니다.</p>
+            ${logsHtml}
+        </div>`;
+        
+        document.getElementById('detailContentArea').innerHTML = detailHtml;
+        document.getElementById('detailSectionTarget').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    async function toggleLogVisibility(logSheetIdx, currentStatus, beanSheetIdx) {
+        const nextStatus = currentStatus === 'HIDDEN' ? 'NORMAL' : 'HIDDEN';
+        try {
+            await gapi.client.sheets.spreadsheets.values.update({
+                spreadsheetId: SPREADSHEET_ID,
+                range: `업데이트_로그!M${logSheetIdx}`,
+                valueInputOption: 'USER_ENTERED',
+                resource: { values: [[nextStatus]] }
+            });
+            await fetchBeanList();
+            viewBeanHistory(beanSheetIdx);
+        } catch(err) { alert("상태 갱신 통신 중 오류가 발생했습니다."); }
+    }
+
+    function viewBeanUpdate(sheetRowIndex) {
+        const rowData = globalCachedRows[sheetRowIndex - 2];
+        if(!rowData) return;
+        const id = rowData[0]; const name = rowData[1];
+        const currentStatus = rowData[2]; const currentStock = rowData[3] || 0;
+        const currentUsage = rowData[18] || '';
+
+        let detailHtml = `
+        <div class="detail-box" id="detailSectionTarget" style="border-color: #e67e22;">
+            <div class="detail-title">
+                <span style="color:#e67e22;">⚙️ [새 업데이트 정보 기입] ${name}</span>
+                <button onclick="document.getElementById('detailContentArea').innerHTML=''" style="background:#7f8c8d; color:white; border:none; padding:5px 10px; cursor:pointer; border-radius:4px; font-weight:bold;">창 닫기 X</button>
+            </div>
+            <div class="form-grid" style="background:#fff;">
+                <div class="form-group">
+                    <label>최종 창고 입고일자 변경</label><input type="date" id="up_inDate">
+                </div>
+                <div class="form-group">
+                    <label>생두 용도 변경</label><input type="text" id="up_usage" value="${currentUsage}">
+                </div>
+                <div class="form-group">
+                    <label>재고 변동량 기입 (kg)</label><input type="number" id="up_stockChange" placeholder="예: 입고는 10, 로스팅 차감은 -5">
+                </div>
+                <div class="form-group">
+                    <label>수동 재고상태 토글 (재고 미기입자용)</label>
+                    <select id="up_statusToggle">
+                        <option value="KEEP" ${currentStatus === 'O' ? 'selected' : ''}>기존 유지 (${currentStatus === 'O' ? '재고있음' : '소진됨'})</option>
+                        <option value="O">재고 있음</option>
+                        <option value="X">소진됨</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>최종 측정일자</label><input type="date" id="up_measureDate">
+                </div>
+                <div class="form-group">
+                    <label>밀도 측정값 (g/L)</label><input type="number" id="up_density" placeholder="예: 830">
+                </div>
+                <div class="form-group">
+                    <label>수분 측정값 (%)</label><input type="number" step="0.1" id="up_moisture" placeholder="예: 10.5">
+                </div>
+                <div class="form-group">
+                    <label>크기</label><input type="text" id="up_size" placeholder="예: 스크린 사이즈, 실측 부피, 큼/작음 등 간단 입력">
+                </div>
+                <div class="form-group">
+                    <label>기타 특이사항</label><input type="text" id="up_etc" placeholder="예: 수분율 작년 대비 높음">
+                </div>
+            </div>
+            <button class="submit-btn" style="background-color:#e67e22;" onclick="updateBeanData(${sheetRowIndex}, '${id}')">⚡ 마스터 갱신 및 로그 기록 저장</button>
+        </div>`;
+        
+        document.getElementById('detailContentArea').innerHTML = detailHtml;
+        document.getElementById('up_measureDate').valueAsDate = new Date(); 
+        document.getElementById('detailSectionTarget').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    async function updateBeanData(sheetRowIndex, beanId) {
+        const rowData = globalCachedRows[sheetRowIndex - 2];
+        const upInDate = document.getElementById('up_inDate').value;
+        const upUsage = document.getElementById('up_usage').value;
+        const upStockChange = document.getElementById('up_stockChange').value;
+        const upStatusToggle = document.getElementById('up_statusToggle').value;
+        const upMeasureDate = document.getElementById('up_measureDate').value;
+        const upDensity = document.getElementById('up_density').value;
+        const upMoisture = document.getElementById('up_moisture').value;
+        const upSize = document.getElementById('up_size').value;
+        const upEtc = document.getElementById('up_etc').value;
+
+        let finalStock = Number(rowData[3] || 0);
+        let finalStatus = rowData[2] || 'O';
+
+        if (upStockChange !== '') {
+            finalStock = finalStock + Number(upStockChange);
+            finalStatus = finalStock > 0 ? 'O' : 'X';
+        } else {
+            if (upStatusToggle === 'O') finalStatus = 'O';
+            if (upStatusToggle === 'X') finalStatus = 'X';
+        }
+
+        const updatedRow = [...rowData];
+        updatedRow[2] = finalStatus; updatedRow[3] = finalStock;  
+        if(upInDate) updatedRow[6] = upInDate; if(upUsage) updatedRow[18] = upUsage; 
+        if(upMeasureDate) updatedRow[20] = upMeasureDate; if(upDensity) updatedRow[21] = upDensity; 
+        if(upMoisture) updatedRow[22] = upMoisture; if(upSize) updatedRow[23] = upSize; 
+        if(upEtc) updatedRow[24] = upEtc;   
+
+        const logId = 'LOG-' + Date.now().toString().slice(-8);
+        const logRowData = [
+            logId, beanId, upStockChange || '0', '', '', upInDate || '', '', 
+            upMeasureDate || '', upDensity || '', upMoisture || '', upSize || '', upEtc || '', 'NORMAL'
+        ];
+
+        try {
+            const btn = document.querySelector('.submit-btn[onclick^="updateBeanData"]');
+            btn.innerText = "데이터 동기화 중..."; btn.disabled = true;
+
+            await gapi.client.sheets.spreadsheets.values.update({
+                spreadsheetId: SPREADSHEET_ID,
+                range: `생두_마스터!A${sheetRowIndex}:Y${sheetRowIndex}`,
+                valueInputOption: 'USER_ENTERED',
+                resource: { values: [updatedRow] }
+            });
+
+            await gapi.client.sheets.spreadsheets.values.append({
+                spreadsheetId: SPREADSHEET_ID,
+                range: '업데이트_로그!A:M',
+                valueInputOption: 'USER_ENTERED',
+                resource: { values: [logRowData] }
+            });
+
+            alert("정보가 반영되었습니다!");
+            document.getElementById('detailContentArea').innerHTML = ''; 
+            fetchBeanList(); 
+        } catch(err) { btn.disabled = false; }
+    }
+
+    async function saveNewBean() {
+        if(!SPREADSHEET_ID) { alert("상단에서 먼저 구글 시트 ID를 입력 및 저장해 주세요!"); return; }
+        const name = document.getElementById('bean_name').value;
+        if(!name) { alert("커피 이름은 필수 항목입니다!"); return; }
+
+        const uniqueId = 'BEAN-' + Date.now().toString().slice(-8);
+        const stock = document.getElementById('bean_stock').value;
+        const price = document.getElementById('bean_price').value;
+        const buyDate = document.getElementById('bean_buyDate').value;
+        const inDate = document.getElementById('bean_inDate').value;
+        const year = document.getElementById('bean_year').value;
+        const country = document.getElementById('bean_country').value;
+        const region = document.getElementById('bean_region').value;
+        const farm = document.getElementById('bean_farm').value;
+        const producer = document.getElementById('bean_producer').value;
+        const altMin = document.getElementById('bean_altMin').value;
+        const altMax = document.getElementById('bean_altMax').value;
+        const variety = document.getElementById('bean_variety').value;
+        const process = document.getElementById('bean_process').value;
+        const importer = document.getElementById('bean_importer').value;
+        const usage = document.getElementById('bean_usage').value;
+        const note = document.getElementById('bean_note').value;
+
+        let altAvg = "";
+        if(altMin && altMax) { altAvg = (Number(altMin) + Number(altMax)) / 2; }
+
+        const newRowData = [
+            uniqueId, name, 'O', stock, buyDate, price, inDate, year, country, region, 
+            farm, producer, altMin, altMax, altAvg, variety, process, importer, usage, note,
+            '', '', '', '', '' 
+        ];
+
+        try {
+            const btn = document.querySelector('.submit-btn');
+            btn.innerText = "저장 중..."; btn.disabled = true;
+
+            await gapi.client.sheets.spreadsheets.values.append({
+                spreadsheetId: SPREADSHEET_ID,
+                range: '생두_마스터!A:Y',
+                valueInputOption: 'USER_ENTERED',
+                resource: { values: [newRowData] }
+            });
+
+            alert("성공적으로 등록되었습니다!");
+            document.querySelectorAll('.form-grid input').forEach(input => {
+                if(input.id !== 'bean_buyDate' && input.id !== 'bean_inDate') input.value = '';
+            });
+            btn.innerText = "💾 구글 시트에 저장하기"; btn.disabled = false;
+            showTab('list');
+        } catch(err) { document.querySelector('.submit-btn').disabled = false; }
+    }
+</script>
+
+<script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+<script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+</body>
+</html>
