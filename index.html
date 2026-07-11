@@ -66,17 +66,17 @@
                 <li style="margin-bottom: 10px;">
                     <strong>1단계: 시스템 베이스 템플릿 사본 저장</strong><br>
                     이 도구를 이용하려면 규격화된 데이터 시트 양식이 필요합니다. 아래 링크를 눌러 시트가 열리면 상단 메뉴의 <strong>[파일] ➔ [사본 만들기]</strong>를 눌러 본인의 구글 드라이브에 저장해 주세요.<br>
-                    👉 <a href="https://docs.google.com/spreadsheets/d/1LuQMv2Wh4hsrd85uxvk1CCKahX70luskQ6ZshJtEKoI/edit?usp=sharing" target="_blank" style="color: #27ae60; font-weight: bold; text-decoration: underline;">[생두 관리 스프레드시트 템플릿 열기 🔗]</a>
+                    👉 <a href="YOUR_SPREADSHEET_TEMPLATE_URL" target="_blank" style="color: #27ae60; font-weight: bold; text-decoration: underline;">[생두 관리 스프레드시트 템플릿 열기 🔗]</a>
                 </li>
                 <li style="margin-bottom: 10px;">
                     <strong>2단계: 나만의 시트 고유 ID 확인</strong><br>
                     사본으로 저장된 개인 스프레드시트의 인터넷 주소창을 확인합니다.<br>
-                    주소창 고유 경로 중 <code style="background: #f7fafc; padding: 2px 4px; border: 1px solid #e2e8f0; color: #e53e3e; font-size:11px;">/spreadsheets/d/</code> 와 <code style="background: #f7fafc; padding: 2px 4px; border: 1px solid #e2e8f0; color: #e53e3e; font-size:11px;">/edit</code> 사이에 위치한 <strong>영문 숫자 문자열</strong>이 시트 ID입니다.
+                    주소창 고유 경로 중 <code style="background: #f7fafc; padding: 2px 4px; border: 1px solid #e2e8f0; color: #e53e3e; font-size:11px;">/spreadsheets/d/</code> 와 <code style="background: #f7fafc; padding: 2px 4px; border: 1px solid #e2e8f0; color: #e53e3e; font-size:11px;">/edit</code> 사이에 위치한 <strong>영문 숫자 문자열</strong>이 회원님의 시트 ID입니다.
                 </li>
                 <li style="margin-bottom: 10px;">
                     <strong>3단계: 로그인 후 ID 기입 연동 완료</strong><br>
                     상단의 [구글 계정으로 연동하기] 버튼을 통해 로그인하면 개인 시트 ID를 입력하는 제어창이 나타납니다. 복사한 고유 ID를 붙여넣고 저장하면 완료됩니다.<br>
-                    👉 <a href="https://docs.google.com/document/d/1xQ2ihSkLuayhvodP7OPqPpeYXpnxHRBJhindK3xTvyE/edit?usp=sharing" target="_blank" style="color: #2980b9; font-weight: bold; text-decoration: underline;">[도구 상세 사용설명서 매뉴얼 보기 🔗]</a>
+                    👉 <a href="YOUR_MANUAL_LINK_URL" target="_blank" style="color: #2980b9; font-weight: bold; text-decoration: underline;">[도구 상세 사용설명서 매뉴얼 보기 🔗]</a>
                 </li>
                 <li>
                     <strong>⚠️ 중요: 'Google에서 확인하지 않은 앱' 경고창 대처법</strong><br>
@@ -109,7 +109,7 @@
                         <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-stock" checked onchange="applyColumnVisibility()"> 잔여량</label>
                         <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-year" checked onchange="applyColumnVisibility()"> 생산 연도</label>
                         <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-buydate" checked onchange="applyColumnVisibility()"> 구매일자</label>
-                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-price" checked onchange="applyColumnVisibility()"> 단가</label>
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-price" checked onchange="applyColumnVisibility()"> 최종 단가</label> <!-- 💡 라벨명 수정 -->
                         <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-indate" checked onchange="applyColumnVisibility()"> 최종 입고일자</label>
                         <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-country" checked onchange="applyColumnVisibility()"> 생산국</label>
                         <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-region" checked onchange="applyColumnVisibility()"> 상세 지역</label>
@@ -156,7 +156,8 @@
                     <label>초기 입고량(kg)</label><input type="number" id="bean_stock" placeholder="예: 20" value="0">
                 </div>
                 <div class="form-group">
-                    <label>구매 단가(원)</label><input type="number" id="bean_price" placeholder="예: 25000">
+                    <!-- 💡 새 생두 등록 시 구매단가 기록 -->
+                    <label>최초 구매 단가(원)</label><input type="number" id="bean_price" placeholder="예: 25000">
                 </div>
                 <div class="form-group">
                     <label>구매 일자</label><input type="date" id="bean_buyDate">
@@ -381,7 +382,9 @@
                         <tr>
                             <th style="background-color: #34495e; color:white; min-width:140px;">액션 제어</th><th>재고상태</th>
                             <th style="min-width: 200px;">커피 이름</th><th class="col-stock">잔여량</th><th class="col-year">생산 연도</th>
-                            <th class="col-buydate">구매일자</th><th class="col-price">단가(원)</th><th class="col-indate">최종 입고일자</th>
+                            <th class="col-buydate">구매일자</th>
+                            <th class="col-price">최종 단가(원)</th> <!-- 💡 헤더 이름 변경 -->
+                            <th class="col-indate">최종 입고일자</th>
                             <th class="col-country">생산국</th><th class="col-region">상세 지역</th><th class="col-farm">농장/조합</th>
                             <th class="col-producer">생산자</th><th class="col-altavg">평균 재배고도(m)</th><th class="col-variety">품종</th>
                             <th class="col-process">가공</th><th class="col-importer">수입사</th><th class="col-usage">생두 용도</th>
@@ -523,6 +526,7 @@
         if(!rowData) return;
         const id = rowData[0]; const name = rowData[1];
         const currentStatus = rowData[2]; const currentStock = rowData[3] || 0;
+        const currentPrice = rowData[5] || ''; // 💡 기존 단가 가져오기
         const currentUsage = rowData[18] || '';
 
         let detailHtml = `
@@ -533,12 +537,6 @@
             </div>
             <div class="form-grid" style="background:#fff;">
                 <div class="form-group">
-                    <label>최종 창고 입고일자 변경</label><input type="date" id="up_inDate">
-                </div>
-                <div class="form-group">
-                    <label>생두 용도 변경</label><input type="text" id="up_usage" value="${currentUsage}">
-                </div>
-                <div class="form-group">
                     <label>재고 변동량 기입 (kg)</label><input type="number" id="up_stockChange" placeholder="예: 입고는 10, 로스팅 차감은 -5">
                 </div>
                 <div class="form-group">
@@ -548,6 +546,16 @@
                         <option value="O">재고 있음</option>
                         <option value="X">소진됨</option>
                     </select>
+                </div>
+                <div class="form-group">
+                    <!-- 💡 신규 추가: 최종 단가 갱신 항목 -->
+                    <label>최종 단가 갱신(원)</label><input type="number" id="up_price" placeholder="기존: ${currentPrice}원 (변동 시 기입)">
+                </div>
+                <div class="form-group">
+                    <label>최종 창고 입고일자 변경</label><input type="date" id="up_inDate">
+                </div>
+                <div class="form-group">
+                    <label>생두 용도 변경</label><input type="text" id="up_usage" value="${currentUsage}">
                 </div>
                 <div class="form-group">
                     <label>최종 측정일자</label><input type="date" id="up_measureDate">
@@ -561,7 +569,7 @@
                 <div class="form-group">
                     <label>크기</label><input type="text" id="up_size" placeholder="예: 스크린 사이즈, 실측 부피, 큼/작음 등 간단 입력">
                 </div>
-                <div class="form-group">
+                <div class="form-group full-width">
                     <label>기타 특이사항</label><input type="text" id="up_etc" placeholder="예: 수분율 작년 대비 높음">
                 </div>
             </div>
@@ -575,10 +583,11 @@
 
     async function updateBeanData(sheetRowIndex, beanId) {
         const rowData = globalCachedRows[sheetRowIndex - 2];
-        const upInDate = document.getElementById('up_inDate').value;
-        const upUsage = document.getElementById('up_usage').value;
         const upStockChange = document.getElementById('up_stockChange').value;
         const upStatusToggle = document.getElementById('up_statusToggle').value;
+        const upPrice = document.getElementById('up_price').value; // 💡 신규 변수
+        const upInDate = document.getElementById('up_inDate').value;
+        const upUsage = document.getElementById('up_usage').value;
         const upMeasureDate = document.getElementById('up_measureDate').value;
         const upDensity = document.getElementById('up_density').value;
         const upMoisture = document.getElementById('up_moisture').value;
@@ -598,6 +607,7 @@
 
         const updatedRow = [...rowData];
         updatedRow[2] = finalStatus; updatedRow[3] = finalStock;  
+        if(upPrice) updatedRow[5] = upPrice; // 💡 F열(단가) 갱신
         if(upInDate) updatedRow[6] = upInDate; if(upUsage) updatedRow[18] = upUsage; 
         if(upMeasureDate) updatedRow[20] = upMeasureDate; if(upDensity) updatedRow[21] = upDensity; 
         if(upMoisture) updatedRow[22] = upMoisture; if(upSize) updatedRow[23] = upSize; 
@@ -620,9 +630,10 @@
                 resource: { values: [updatedRow] }
             });
 
+            // 💡 [에러 수정] 구글 시트 데이터가 옆으로 밀리는 현상 방지 (range를 시트 이름으로 고정)
             await gapi.client.sheets.spreadsheets.values.append({
                 spreadsheetId: SPREADSHEET_ID,
-                range: '업데이트_로그!A:M',
+                range: '업데이트_로그',
                 valueInputOption: 'USER_ENTERED',
                 resource: { values: [logRowData] }
             });
@@ -669,9 +680,10 @@
             const btn = document.querySelector('.submit-btn');
             btn.innerText = "저장 중..."; btn.disabled = true;
 
+            // 💡 [에러 수정] 여기도 시트 이름으로 고정하여 밀림 현상 방지
             await gapi.client.sheets.spreadsheets.values.append({
                 spreadsheetId: SPREADSHEET_ID,
-                range: '생두_마스터!A:Y',
+                range: '생두_마스터',
                 valueInputOption: 'USER_ENTERED',
                 resource: { values: [newRowData] }
             });
