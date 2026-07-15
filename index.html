@@ -18,6 +18,12 @@
         .nav-btn { background-color: #95a5a6; padding: 10px 15px; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .nav-btn.active { background-color: #2c3e50; }
         
+        /* 💡 즐겨찾기 및 정렬 제어 바 스타일 */
+        .list-control-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; background: #fff; padding: 12px; border: 1px solid #cbd5e0; border-radius: 6px; }
+        .sub-nav-btn { background-color: #edf2f7; color: #4a5568; border: 1px solid #cbd5e0; padding: 8px 14px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; }
+        .sub-nav-btn.active { background-color: #2c3e50; color: white; border-color: #2c3e50; }
+        .sub-nav-btn.fav-style.active { background-color: #f1c40f; color: #333; border-color: #f1c40f; }
+
         /* 테이블 & 가로 스크롤 스타일 */
         .table-wrapper { overflow-x: auto; background: #fff; border: 1px solid #bdc3c7; border-radius: 4px; margin-bottom: 30px;}
         table { width: max-content; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
@@ -109,7 +115,7 @@
                         <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-stock" checked onchange="applyColumnVisibility()"> 잔여량</label>
                         <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-year" checked onchange="applyColumnVisibility()"> 생산 연도</label>
                         <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-buydate" checked onchange="applyColumnVisibility()"> 구매일자</label>
-                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-price" checked onchange="applyColumnVisibility()"> 최종 단가</label> <!-- 💡 라벨명 수정 -->
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-price" checked onchange="applyColumnVisibility()"> 최종 단가</label> 
                         <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-indate" checked onchange="applyColumnVisibility()"> 최종 입고일자</label>
                         <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-country" checked onchange="applyColumnVisibility()"> 생산국</label>
                         <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-region" checked onchange="applyColumnVisibility()"> 상세 지역</label>
@@ -142,6 +148,24 @@
                 </div>
             </details>
 
+            <div class="list-control-bar">
+                <button class="sub-nav-btn active" id="subtab-all" onclick="changeSubTab('all')">📁 전체 생두</button>
+                <button class="sub-nav-btn fav-style" id="subtab-fav" onclick="changeSubTab('fav')">⭐ 즐겨찾는 생두</button>
+                
+                <div style="margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: bold; color: #2c3e50;">
+                    <label for="sort-select">🔀 정렬 기준:</label>
+                    <select id="sort-select" onchange="fetchBeanList()" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc; font-weight: bold;">
+                        <option value="default">재고있음 우선 (기본)</option>
+                        <option value="name_asc">커피 이름순 (ㄱ-ㅎ)</option>
+                        <option value="price_desc">최종 단가 높은순</option>
+                        <option value="price_asc">최종 단가 낮은순</option>
+                        <option value="density_desc">밀도 높은순</option>
+                        <option value="moisture_desc">수분 높은순</option>
+                        <option value="stock_desc">잔여량 많은순</option>
+                    </select>
+                </div>
+            </div>
+
             <div id="listContentArea"></div>
             <div id="detailContentArea"></div>
         </div>
@@ -156,7 +180,6 @@
                     <label>초기 입고량(kg)</label><input type="number" id="bean_stock" placeholder="예: 20" value="0">
                 </div>
                 <div class="form-group">
-                    <!-- 💡 새 생두 등록 시 구매단가 기록 -->
                     <label>최초 구매 단가(원)</label><input type="number" id="bean_price" placeholder="예: 25000">
                 </div>
                 <div class="form-group">
@@ -219,6 +242,7 @@
     let globalCachedRows = [];     
     let globalBeanLogs = {};       
     let globalBeanAverages = {};   
+    let currentSubTab = 'all'; // 💡 즐겨찾기 탭 필터링 상태 변수
 
     function gapiLoaded() { gapi.load('client', initializeGapiClient); }
     async function initializeGapiClient() {
@@ -313,6 +337,26 @@
         }
     }
 
+    // 💡 [신규 구현] 하위 필터 탭 (전체/즐겨찾기) 전환 제어 함수
+    function changeSubTab(mode) {
+        currentSubTab = mode;
+        document.getElementById('subtab-all').classList.remove('active');
+        document.getElementById('subtab-fav').classList.remove('active');
+        
+        if(mode === 'all') document.getElementById('subtab-all').classList.add('active');
+        if(mode === 'fav') document.getElementById('subtab-fav').classList.add('active');
+        
+        fetchBeanList();
+    }
+
+    // 💡 [신규 구현] 개별 생두 즐겨찾기 On/Off 토글 함수
+    function toggleFavorite(beanId, event) {
+        event.stopPropagation(); // 버튼 클릭 시 행 전체나 다른 액션 클릭 버블링 방지
+        const isFav = localStorage.getItem('GB_FAV_' + beanId) === 'true';
+        localStorage.setItem('GB_FAV_' + beanId, !isFav ? 'true' : 'false');
+        fetchBeanList(); // 목록 즉시 리로드
+    }
+
     function applyColumnVisibility() {
         document.querySelectorAll('.col-toggle-checkbox').forEach(cb => {
             const colClass = cb.dataset.col;
@@ -367,13 +411,73 @@
                 document.getElementById('listContentArea').innerHTML = '<h3>데이터가 없습니다. 새 생두를 등록해 주세요.</h3>'; return;
             }
 
-            const sortedRows = [...masterRows].map((row, index) => ({ originalIndex: index + 2, data: row }));
-            sortedRows.sort((a, b) => {
-                let statusA = a.data[2] || ''; let statusB = b.data[2] || '';
-                if (statusA === 'O' && statusB !== 'O') return -1;
-                if (statusA !== 'O' && statusB === 'O') return 1;
-                return 0;
+            // 💡 [구조 분석 개량] 정렬과 필터를 완벽하고 안전하게 처리하기 위해 객체 배열로 변환 구조화
+            let processedRows = masterRows.map((row, index) => {
+                return {
+                    originalIndex: index + 2,
+                    id: row[0] || '',
+                    name: row[1] || '-',
+                    status: row[2] || 'X',
+                    stock: parseFloat(row[3]) || 0,
+                    buyDate: row[4] || '-',
+                    price: parseFloat(row[5]) || 0,
+                    inDate: row[6] || '-',
+                    year: row[7] || '-',
+                    country: row[8] || '-',
+                    region: row[9] || '-',
+                    farm: row[10] || '-',
+                    producer: row[11] || '-',
+                    altMin: row[12] || '-',
+                    altMax: row[13] || '-',
+                    altAvg: row[14] || '-',
+                    variety: row[15] || '-',
+                    process: row[16] || '-',
+                    importer: row[17] || '-',
+                    usage: row[18] || '-',
+                    note: row[19] || '-',
+                    lastMeasure: row[20] || '-',
+                    density: parseFloat(row[21]) || 0,
+                    moisture: parseFloat(row[22]) || 0,
+                    size: row[23] || '-',
+                    etc: row[24] || '-',
+                    rawStock: row[3] || '0',
+                    rawPrice: row[5] || '-',
+                    rawDensity: row[21] || '-',
+                    rawMoisture: row[22] || '-'
+                };
             });
+
+            // 💡 [2번 즐겨찾기 필터 작동] '즐겨찾는 생두' 선택 시 로컬저장소 플래그 필터링 검사
+            if (currentSubTab === 'fav') {
+                processedRows = processedRows.filter(row => localStorage.getItem('GB_FAV_' + row.id) === 'true');
+            }
+
+            // 💡 [1번 다중 정렬 기능 작동] 셀렉트 박스 기준 데이터 동적 소팅 분기
+            const sortVal = document.getElementById('sort-select') ? document.getElementById('sort-select').value : 'default';
+            if (sortVal === 'default') {
+                processedRows.sort((a, b) => {
+                    let statusA = a.status; let statusB = b.status;
+                    if (statusA === 'O' && statusB !== 'O') return -1;
+                    if (statusA !== 'O' && statusB === 'O') return 1;
+                    return 0;
+                });
+            } else if (sortVal === 'name_asc') {
+                processedRows.sort((a, b) => a.name.localeCompare(b.name));
+            } else if (sortVal === 'price_desc') {
+                processedRows.sort((a, b) => b.price - a.price);
+            } else if (sortVal === 'price_asc') {
+                processedRows.sort((a, b) => a.price - b.price);
+            } else if (sortVal === 'density_desc') {
+                processedRows.sort((a, b) => b.density - a.density);
+            } else if (sortVal === 'moisture_desc') {
+                processedRows.sort((a, b) => b.moisture - a.moisture);
+            } else if (sortVal === 'stock_desc') {
+                processedRows.sort((a, b) => b.stock - a.stock);
+            }
+
+            if (processedRows.length === 0) {
+                document.getElementById('listContentArea').innerHTML = '<h3 style="color:#7f8c8d; text-align:center; padding:20px;">조건에 부합하는 생두 정보가 존재하지 않습니다.</h3>'; return;
+            }
 
             let html = `
             <div class="table-wrapper">
@@ -382,9 +486,7 @@
                         <tr>
                             <th style="background-color: #34495e; color:white; min-width:140px;">액션 제어</th><th>재고상태</th>
                             <th style="min-width: 200px;">커피 이름</th><th class="col-stock">잔여량</th><th class="col-year">생산 연도</th>
-                            <th class="col-buydate">구매일자</th>
-                            <th class="col-price">최종 단가(원)</th> <!-- 💡 헤더 이름 변경 -->
-                            <th class="col-indate">최종 입고일자</th>
+                            <th class="col-buydate">구매일자</th><th class="col-price">최종 단가(원)</th><th class="col-indate">최종 입고일자</th>
                             <th class="col-country">생산국</th><th class="col-region">상세 지역</th><th class="col-farm">농장/조합</th>
                             <th class="col-producer">생산자</th><th class="col-altavg">평균 재배고도(m)</th><th class="col-variety">품종</th>
                             <th class="col-process">가공</th><th class="col-importer">수입사</th><th class="col-usage">생두 용도</th>
@@ -398,20 +500,10 @@
                     </thead>
                     <tbody>`;
 
-            sortedRows.forEach(item => {
-                const r = item.data; const rIdx = item.originalIndex;
-                const id = r[0]; const name = r[1] || '-'; const status = r[2] || 'X'; const stock = r[3] || '0';
-                const buyDate = r[4] || '-'; const price = r[5] || '-'; const inDate = r[6] || '-';
-                const year = r[7] || '-'; const country = r[8] || '-'; const region = r[9] || '-';
-                const farm = r[10] || '-'; const producer = r[11] || '-'; 
-                const altMin = r[12] || '-'; const altMax = r[13] || '-'; const altAvg = r[14] || '-';
-                const variety = r[15] || '-'; const process = r[16] || '-'; const importer = r[17] || '-';
-                const usage = r[18] || '-'; const note = r[19] || '-';
-                const lastMeasure = r[20] || '-'; const density = r[21] || '-'; const moisture = r[22] || '-';
-                const size = r[23] || '-'; const etc = r[24] || '-';
-
-                const badgeHtml = status === 'O' ? '<span class="badge badge-in">재고있음</span>' : '<span class="badge badge-out">소진됨</span>';
-                const priceFmt = !isNaN(price) && price !== '-' ? Number(price).toLocaleString() : price;
+            processedRows.forEach(item => {
+                const rIdx = item.originalIndex; const id = item.id;
+                const badgeHtml = item.status === 'O' ? '<span class="badge badge-in">재고있음</span>' : '<span class="badge badge-out">소진됨</span>';
+                const priceFmt = !isNaN(item.price) && item.rawPrice !== '-' ? item.price.toLocaleString() : item.rawPrice;
                 
                 const averages = globalBeanAverages[id] || { avgDensity: null, avgMoisture: null };
                 const dAvgDisp = averages.avgDensity !== null ? Math.round(averages.avgDensity) : '-';
@@ -419,23 +511,33 @@
                 const dPctDisp = averages.avgDensity !== null ? getPercentileRankString(averages.avgDensity, allAvgDensities) : '-';
                 const mPctDisp = averages.avgMoisture !== null ? getPercentileRankString(averages.avgMoisture, allAvgMoistures) : '-';
 
+                // 💡 [2번 즐겨찾기 별모양 처리] 로컬스토리지 값 대조 후 노란 별 / 빈 별 매핑
+                const isFav = localStorage.getItem('GB_FAV_' + id) === 'true';
+                const starIcon = isFav ? '⭐' : '☆';
+                const starColor = isFav ? 'color: #f1c40f;' : 'color: #cbd5e0;';
+
                 html += `<tr>
                             <td>
                                 <button onclick="viewBeanHistory(${rIdx})" style="padding:4px 6px; margin-right:3px; background:#34495e; color:white; border:none; border-radius:3px; cursor:pointer; font-weight:bold; font-size:11px;">상세보기 🔍</button>
                                 <button onclick="viewBeanUpdate(${rIdx})" style="padding:4px 6px; background:#e67e22; color:white; border:none; border-radius:3px; cursor:pointer; font-weight:bold; font-size:11px;">업데이트 ⚡</button>
                             </td>
-                            <td>${badgeHtml}</td><td style="font-weight:bold; text-align:left;">${name}</td><td class="col-stock">${stock} kg</td>
-                            <td class="col-year">${year}</td><td class="col-buydate">${buyDate}</td><td class="col-price">${priceFmt}</td>
-                            <td class="col-indate">${inDate}</td><td class="col-country">${country}</td><td class="col-region">${region}</td>
-                            <td class="col-farm">${farm}</td><td class="col-producer">${producer}</td><td class="col-altavg">${altAvg}</td>
-                            <td class="col-variety">${variety}</td><td class="col-process">${process}</td><td class="col-importer">${importer}</td>
-                            <td class="col-usage">${usage}</td><td class="col-note" style="text-align:left; max-width:150px; overflow:hidden; text-overflow:ellipsis;">${note}</td>
-                            <td class="col-mdate" style="background-color: #fffaf0;">${lastMeasure}</td><td class="col-density" style="background-color: #fffaf0;">${density}</td>
+                            <td>${badgeHtml}</td>
+                            <td style="font-weight:bold; text-align:left;">
+                                <button onclick="toggleFavorite('${id}', event)" style="background:none; border:none; cursor:pointer; font-size:15px; padding:0 3px 0 0; ${starColor} outline:none;" title="즐겨찾기 토글">${starIcon}</button>
+                                ${item.name}
+                            </td>
+                            <td class="col-stock">${item.rawStock} kg</td><td class="col-year">${item.year}</td><td class="col-buydate">${item.buyDate}</td>
+                            <td class="col-price">${priceFmt}</td><td class="col-indate">${item.inDate}</td><td class="col-country">${item.country}</td>
+                            <td class="col-region">${item.region}</td><td class="col-farm">${item.farm}</td><td class="col-producer">${item.producer}</td>
+                            <td class="col-altavg">${item.altAvg}</td><td class="col-variety">${item.variety}</td><td class="col-process">${item.process}</td>
+                            <td class="col-importer">${item.importer}</td><td class="col-usage">${item.usage}</td>
+                            <td class="col-note" style="text-align:left; max-width:150px; overflow:hidden; text-overflow:ellipsis;">${item.note}</td>
+                            <td class="col-mdate" style="background-color: #fffaf0;">${item.lastMeasure}</td><td class="col-density" style="background-color: #fffaf0;">${item.rawDensity}</td>
                             <td class="col-density-pct" style="background-color: #fffaf0; font-weight:bold; color:#d35400;">${dPctDisp}</td><td class="col-density-avg" style="background-color: #fffaf0; color:#7f8c8d;">${dAvgDisp}</td>
-                            <td class="col-moisture" style="background-color: #fffaf0;">${moisture}</td><td class="col-moisture-pct" style="background-color: #fffaf0; font-weight:bold; color:#16a085;">${mPctDisp}</td>
-                            <td class="col-moisture-avg" style="background-color: #fffaf0; color:#7f8c8d;">${mAvgDisp}</td><td class="col-size" style="background-color: #fffaf0;">${size}</td>
-                            <td class="col-etc" style="background-color: #fffaf0; text-align:left;">${etc}</td>
-                            <td class="col-altmin">${altMin}</td><td class="col-altmax">${altMax}</td><td class="col-id">${id}</td>
+                            <td class="col-moisture" style="background-color: #fffaf0;">${item.rawMoisture}</td><td class="col-moisture-pct" style="background-color: #fffaf0; font-weight:bold; color:#16a085;">${mPctDisp}</td>
+                            <td class="col-moisture-avg" style="background-color: #fffaf0; color:#7f8c8d;">${mAvgDisp}</td><td class="col-size" style="background-color: #fffaf0;">${item.size}</td>
+                            <td class="col-etc" style="background-color: #fffaf0; text-align:left;">${item.etc}</td>
+                            <td class="col-altmin">${item.altMin}</td><td class="col-altmax">${item.altmax}</td><td class="col-id">${id}</td>
                         </tr>`;
             });
             html += `</tbody></table></div>`;
@@ -526,7 +628,7 @@
         if(!rowData) return;
         const id = rowData[0]; const name = rowData[1];
         const currentStatus = rowData[2]; const currentStock = rowData[3] || 0;
-        const currentPrice = rowData[5] || ''; // 💡 기존 단가 가져오기
+        const currentPrice = rowData[5] || ''; 
         const currentUsage = rowData[18] || '';
 
         let detailHtml = `
@@ -548,7 +650,6 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <!-- 💡 신규 추가: 최종 단가 갱신 항목 -->
                     <label>최종 단가 갱신(원)</label><input type="number" id="up_price" placeholder="기존: ${currentPrice}원 (변동 시 기입)">
                 </div>
                 <div class="form-group">
@@ -585,7 +686,7 @@
         const rowData = globalCachedRows[sheetRowIndex - 2];
         const upStockChange = document.getElementById('up_stockChange').value;
         const upStatusToggle = document.getElementById('up_statusToggle').value;
-        const upPrice = document.getElementById('up_price').value; // 💡 신규 변수
+        const upPrice = document.getElementById('up_price').value; 
         const upInDate = document.getElementById('up_inDate').value;
         const upUsage = document.getElementById('up_usage').value;
         const upMeasureDate = document.getElementById('up_measureDate').value;
@@ -607,7 +708,7 @@
 
         const updatedRow = [...rowData];
         updatedRow[2] = finalStatus; updatedRow[3] = finalStock;  
-        if(upPrice) updatedRow[5] = upPrice; // 💡 F열(단가) 갱신
+        if(upPrice) updatedRow[5] = upPrice; 
         if(upInDate) updatedRow[6] = upInDate; if(upUsage) updatedRow[18] = upUsage; 
         if(upMeasureDate) updatedRow[20] = upMeasureDate; if(upDensity) updatedRow[21] = upDensity; 
         if(upMoisture) updatedRow[22] = upMoisture; if(upSize) updatedRow[23] = upSize; 
@@ -630,7 +731,6 @@
                 resource: { values: [updatedRow] }
             });
 
-            // 💡 [에러 수정] 구글 시트 데이터가 옆으로 밀리는 현상 방지 (range를 시트 이름으로 고정)
             await gapi.client.sheets.spreadsheets.values.append({
                 spreadsheetId: SPREADSHEET_ID,
                 range: '업데이트_로그',
@@ -680,7 +780,6 @@
             const btn = document.querySelector('.submit-btn');
             btn.innerText = "저장 중..."; btn.disabled = true;
 
-            // 💡 [에러 수정] 여기도 시트 이름으로 고정하여 밀림 현상 방지
             await gapi.client.sheets.spreadsheets.values.append({
                 spreadsheetId: SPREADSHEET_ID,
                 range: '생두_마스터',
