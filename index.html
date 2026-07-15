@@ -18,11 +18,23 @@
         .nav-btn { background-color: #95a5a6; padding: 10px 15px; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .nav-btn.active { background-color: #2c3e50; }
         
-        /* 💡 즐겨찾기 및 정렬 제어 바 스타일 */
-        .list-control-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; background: #fff; padding: 12px; border: 1px solid #cbd5e0; border-radius: 6px; }
+        /* 💡 [개량] 엑셀식 다중 필터 및 검색 레이아웃 그리드 스타일 상향 정의 */
+        .list-control-bar { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+            gap: 15px; 
+            background: #fff; 
+            padding: 15px; 
+            border: 1px solid #cbd5e0; 
+            border-radius: 6px; 
+            margin-bottom: 15px; 
+        }
         .sub-nav-btn { background-color: #edf2f7; color: #4a5568; border: 1px solid #cbd5e0; padding: 8px 14px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px; }
         .sub-nav-btn.active { background-color: #2c3e50; color: white; border-color: #2c3e50; }
         .sub-nav-btn.fav-style.active { background-color: #f1c40f; color: #333; border-color: #f1c40f; }
+        .filter-group { display: flex; flex-direction: column; gap: 4px; }
+        .filter-group label { font-size: 12px; font-weight: bold; color: #4a5568; }
+        .filter-group input, .filter-group select { padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; font-weight: bold; }
 
         /* 테이블 & 가로 스크롤 스타일 */
         .table-wrapper { overflow-x: auto; background: #fff; border: 1px solid #bdc3c7; border-radius: 4px; margin-bottom: 30px;}
@@ -149,20 +161,39 @@
             </details>
 
             <div class="list-control-bar">
-                <button class="sub-nav-btn active" id="subtab-all" onclick="changeSubTab('all')">📁 전체 생두</button>
-                <button class="sub-nav-btn fav-style" id="subtab-fav" onclick="changeSubTab('fav')">⭐ 즐겨찾는 생두</button>
+                <div style="grid-column: span 12; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #edf2f7; padding-bottom: 12px; flex-wrap: wrap;">
+                    <button class="sub-nav-btn active" id="subtab-all" onclick="changeSubTab('all')">📁 전체 생두</button>
+                    <button class="sub-nav-btn fav-style" id="subtab-fav" onclick="changeSubTab('fav')">⭐ 즐겨찾는 생두</button>
+                    
+                    <div style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
+                        <label for="sort-select" style="font-size: 13px; font-weight: bold; color: #2c3e50;">🔀 정렬 기준:</label>
+                        <select id="sort-select" onchange="applyFiltersAndRender()" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc; font-weight: bold; font-size: 13px;">
+                            <option value="default">재고있음 우선 (기본)</option>
+                            <option value="name_asc">커피 이름순 (A-Z, ㄱ-ㅎ)</option>
+                            <option value="price_desc">최종 단가 높은순</option>
+                            <option value="price_asc">최종 단가 낮은순</option>
+                            <option value="density_desc">밀도 높은순</option>
+                            <option value="moisture_desc">수분 높은순</option>
+                            <option value="stock_desc">잔여량 많은순</option>
+                        </select>
+                    </div>
+                </div>
                 
-                <div style="margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: bold; color: #2c3e50;">
-                    <label for="sort-select">🔀 정렬 기준:</label>
-                    <select id="sort-select" onchange="fetchBeanList()" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc; font-weight: bold;">
-                        <option value="default">재고있음 우선 (기본)</option>
-                        <option value="name_asc">커피 이름순 (ㄱ-ㅎ)</option>
-                        <option value="price_desc">최종 단가 높은순</option>
-                        <option value="price_asc">최종 단가 낮은순</option>
-                        <option value="density_desc">밀도 높은순</option>
-                        <option value="moisture_desc">수분 높은순</option>
-                        <option value="stock_desc">잔여량 많은순</option>
-                    </select>
+                <div class="filter-group">
+                    <label>🔍 키워드 검색 (이름/노트/생산자 등)</label>
+                    <input type="text" id="filter-search" oninput="applyFiltersAndRender()" placeholder="검색어 입력...">
+                </div>
+                <div class="filter-group">
+                    <label>🌍 생산국 필터</label>
+                    <select id="filter-country" onchange="applyFiltersAndRender()"></select>
+                </div>
+                <div class="filter-group">
+                    <label>🧪 가공 방식 필터</label>
+                    <select id="filter-process" onchange="applyFiltersAndRender()"></select>
+                </div>
+                <div class="filter-group">
+                    <label>🎯 생두 용도 필터</label>
+                    <select id="filter-usage" onchange="applyFiltersAndRender()"></select>
                 </div>
             </div>
 
@@ -239,10 +270,10 @@
     const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
 
     let tokenClient; let gapiInited = false; let gisInited = false;
-    let globalCachedRows = [];     
-    let globalBeanLogs = {};       
-    let globalBeanAverages = {};   
-    let currentSubTab = 'all'; // 💡 즐겨찾기 탭 필터링 상태 변수
+    let globalCachedRows = [];     // 마스터 원본 보존 행 캐시
+    let globalBeanLogs = {};       // 생두별 업데이트 로그 그룹 캐시
+    let globalBeanAverages = {};   // 생두별 계산된 평균값 저장소
+    let currentSubTab = 'all';     // 'all' 또는 'fav' 상태 제어
 
     function gapiLoaded() { gapi.load('client', initializeGapiClient); }
     async function initializeGapiClient() {
@@ -337,24 +368,48 @@
         }
     }
 
-    // 💡 [신규 구현] 하위 필터 탭 (전체/즐겨찾기) 전환 제어 함수
+    /* 💡 [신규 개량] 전체 / 즐겨찾기 탭 필터링 변경 */
     function changeSubTab(mode) {
         currentSubTab = mode;
         document.getElementById('subtab-all').classList.remove('active');
         document.getElementById('subtab-fav').classList.remove('active');
-        
         if(mode === 'all') document.getElementById('subtab-all').classList.add('active');
         if(mode === 'fav') document.getElementById('subtab-fav').classList.add('active');
-        
-        fetchBeanList();
+        applyFiltersAndRender(); // 0.1초 고속 로컬 연산 트리거 호출
     }
 
-    // 💡 [신규 구현] 개별 생두 즐겨찾기 On/Off 토글 함수
+    /* 💡 [신규 개량] 즐겨찾기 On/Off 하트 스위치 로컬저장소 연동 제어 */
     function toggleFavorite(beanId, event) {
-        event.stopPropagation(); // 버튼 클릭 시 행 전체나 다른 액션 클릭 버블링 방지
+        event.stopPropagation(); // 정보 관리 버튼 버블링 차단
         const isFav = localStorage.getItem('GB_FAV_' + beanId) === 'true';
         localStorage.setItem('GB_FAV_' + beanId, !isFav ? 'true' : 'false');
-        fetchBeanList(); // 목록 즉시 리로드
+        applyFiltersAndRender(); // 무거운 네트워크 재통신 없이 화면 스크랩 렌더링만 갱신
+    }
+
+    /* 💡 [신규 개량] 데이터에서 유니크한 원본 값들만 추적해 엑셀식 드롭다운 목록 옵션을 빌드하는 메커니즘 */
+    function setupExcelDropdownFilter(elementId, valuesList) {
+        const el = document.getElementById(elementId);
+        if(!el) return;
+        const savedSelection = el.value || 'all'; // 갱신 전 선택되어 있던 유저값 보존
+        
+        // 중복 제거, 공백 제거, 하이픈 제거 후 가나다순 정렬
+        const cleanedUniqueValues = [...new Set(valuesList)]
+            .map(v => v ? v.trim() : '')
+            .filter(v => v && v !== '-')
+            .sort();
+
+        let optionsHtml = `<option value="all">전체 보기 (필터 없음)</option>`;
+        cleanedUniqueValues.forEach(val => {
+            optionsHtml += `<option value="${val}">${val}</option>`;
+        });
+        el.innerHTML = optionsHtml;
+        
+        // 기존 선택값 복원 동기화
+        if(cleanedUniqueValues.includes(savedSelection)) {
+            el.value = savedSelection;
+        } else {
+            el.value = 'all';
+        }
     }
 
     function applyColumnVisibility() {
@@ -374,6 +429,7 @@
         return `상위 ${pct}%`;
     }
 
+    // 통신 동기화 엔진 (구글 데이터만 깔끔하게 메모리에 업로드)
     async function fetchBeanList() {
         if(!SPREADSHEET_ID) { alert("연동된 구글 시트 ID가 유실되었습니다."); return; }
         document.getElementById('listContentArea').innerHTML = '<h3 style="color: #3498db;">🔄 구글 데이터베이스를 동기화하는 중입니다...</h3>';
@@ -404,146 +460,176 @@
                 globalBeanAverages[beanId] = { avgDensity: avgD, avgMoisture: avgM };
             });
 
-            const allAvgDensities = Object.values(globalBeanAverages).map(b => b.avgDensity).filter(v => v !== null);
-            const allAvgMoistures = Object.values(globalBeanAverages).map(b => b.avgMoisture).filter(v => v !== null);
+            // 💡 [엑셀식 빌더 추가] 장부를 다 긁어왔으면 생산국, 가공 방식, 용도 열에서 고유 항목들만 추출해 필터 생성기 가동
+            setupExcelDropdownFilter('filter-country', masterRows.map(r => r[8]));
+            setupExcelDropdownFilter('filter-process', masterRows.map(r => r[16]));
+            setupExcelDropdownFilter('filter-usage', masterRows.map(r => r[18]));
 
-            if (masterRows.length === 0) {
-                document.getElementById('listContentArea').innerHTML = '<h3>데이터가 없습니다. 새 생두를 등록해 주세요.</h3>'; return;
-            }
+            // 고속 로컬 연산 엔진으로 렌더링 위임
+            applyFiltersAndRender();
 
-            // 💡 [구조 분석 개량] 정렬과 필터를 완벽하고 안전하게 처리하기 위해 객체 배열로 변환 구조화
-            let processedRows = masterRows.map((row, index) => {
-                return {
-                    originalIndex: index + 2,
-                    id: row[0] || '',
-                    name: row[1] || '-',
-                    status: row[2] || 'X',
-                    stock: parseFloat(row[3]) || 0,
-                    buyDate: row[4] || '-',
-                    price: parseFloat(row[5]) || 0,
-                    inDate: row[6] || '-',
-                    year: row[7] || '-',
-                    country: row[8] || '-',
-                    region: row[9] || '-',
-                    farm: row[10] || '-',
-                    producer: row[11] || '-',
-                    altMin: row[12] || '-',
-                    altMax: row[13] || '-',
-                    altAvg: row[14] || '-',
-                    variety: row[15] || '-',
-                    process: row[16] || '-',
-                    importer: row[17] || '-',
-                    usage: row[18] || '-',
-                    note: row[19] || '-',
-                    lastMeasure: row[20] || '-',
-                    density: parseFloat(row[21]) || 0,
-                    moisture: parseFloat(row[22]) || 0,
-                    size: row[23] || '-',
-                    etc: row[24] || '-',
-                    rawStock: row[3] || '0',
-                    rawPrice: row[5] || '-',
-                    rawDensity: row[21] || '-',
-                    rawMoisture: row[22] || '-'
-                };
-            });
-
-            // 💡 [2번 즐겨찾기 필터 작동] '즐겨찾는 생두' 선택 시 로컬저장소 플래그 필터링 검사
-            if (currentSubTab === 'fav') {
-                processedRows = processedRows.filter(row => localStorage.getItem('GB_FAV_' + row.id) === 'true');
-            }
-
-            // 💡 [1번 다중 정렬 기능 작동] 셀렉트 박스 기준 데이터 동적 소팅 분기
-            const sortVal = document.getElementById('sort-select') ? document.getElementById('sort-select').value : 'default';
-            if (sortVal === 'default') {
-                processedRows.sort((a, b) => {
-                    let statusA = a.status; let statusB = b.status;
-                    if (statusA === 'O' && statusB !== 'O') return -1;
-                    if (statusA !== 'O' && statusB === 'O') return 1;
-                    return 0;
-                });
-            } else if (sortVal === 'name_asc') {
-                processedRows.sort((a, b) => a.name.localeCompare(b.name));
-            } else if (sortVal === 'price_desc') {
-                processedRows.sort((a, b) => b.price - a.price);
-            } else if (sortVal === 'price_asc') {
-                processedRows.sort((a, b) => a.price - b.price);
-            } else if (sortVal === 'density_desc') {
-                processedRows.sort((a, b) => b.density - a.density);
-            } else if (sortVal === 'moisture_desc') {
-                processedRows.sort((a, b) => b.moisture - a.moisture);
-            } else if (sortVal === 'stock_desc') {
-                processedRows.sort((a, b) => b.stock - a.stock);
-            }
-
-            if (processedRows.length === 0) {
-                document.getElementById('listContentArea').innerHTML = '<h3 style="color:#7f8c8d; text-align:center; padding:20px;">조건에 부합하는 생두 정보가 존재하지 않습니다.</h3>'; return;
-            }
-
-            let html = `
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="background-color: #34495e; color:white; min-width:140px;">액션 제어</th><th>재고상태</th>
-                            <th style="min-width: 200px;">커피 이름</th><th class="col-stock">잔여량</th><th class="col-year">생산 연도</th>
-                            <th class="col-buydate">구매일자</th><th class="col-price">최종 단가(원)</th><th class="col-indate">최종 입고일자</th>
-                            <th class="col-country">생산국</th><th class="col-region">상세 지역</th><th class="col-farm">농장/조합</th>
-                            <th class="col-producer">생산자</th><th class="col-altavg">평균 재배고도(m)</th><th class="col-variety">품종</th>
-                            <th class="col-process">가공</th><th class="col-importer">수입사</th><th class="col-usage">생두 용도</th>
-                            <th class="col-note">부가 정보</th><th class="col-mdate" style="background-color: #f39c12; color:white;">최종 측정일자</th>
-                            <th class="col-density" style="background-color: #f39c12; color:white;">밀도(g/L)</th><th class="col-density-pct" style="background-color: #f39c12; color:white;">밀도(백분위)</th>
-                            <th class="col-density-avg" style="background-color: #f39c12; color:white;">밀도(평균)</th><th class="col-moisture" style="background-color: #f39c12; color:white;">수분(%)</th>
-                            <th class="col-moisture-pct" style="background-color: #f39c12; color:white;">수분(백분위)</th><th class="col-moisture-avg" style="background-color: #f39c12; color:white;">수분(평균)</th>
-                            <th class="col-size" style="background-color: #f39c12; color:white;">크기</th><th class="col-etc" style="background-color: #f39c12; color:white;">기타</th>
-                            <th class="col-altmin">재배고도 최저(m)</th><th class="col-altmax">재배고도 최고(m)</th><th class="col-id">고유 ID</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
-
-            processedRows.forEach(item => {
-                const rIdx = item.originalIndex; const id = item.id;
-                const badgeHtml = item.status === 'O' ? '<span class="badge badge-in">재고있음</span>' : '<span class="badge badge-out">소진됨</span>';
-                const priceFmt = !isNaN(item.price) && item.rawPrice !== '-' ? item.price.toLocaleString() : item.rawPrice;
-                
-                const averages = globalBeanAverages[id] || { avgDensity: null, avgMoisture: null };
-                const dAvgDisp = averages.avgDensity !== null ? Math.round(averages.avgDensity) : '-';
-                const mAvgDisp = averages.avgMoisture !== null ? averages.avgMoisture.toFixed(1) : '-';
-                const dPctDisp = averages.avgDensity !== null ? getPercentileRankString(averages.avgDensity, allAvgDensities) : '-';
-                const mPctDisp = averages.avgMoisture !== null ? getPercentileRankString(averages.avgMoisture, allAvgMoistures) : '-';
-
-                // 💡 [2번 즐겨찾기 별모양 처리] 로컬스토리지 값 대조 후 노란 별 / 빈 별 매핑
-                const isFav = localStorage.getItem('GB_FAV_' + id) === 'true';
-                const starIcon = isFav ? '⭐' : '☆';
-                const starColor = isFav ? 'color: #f1c40f;' : 'color: #cbd5e0;';
-
-                html += `<tr>
-                            <td>
-                                <button onclick="viewBeanHistory(${rIdx})" style="padding:4px 6px; margin-right:3px; background:#34495e; color:white; border:none; border-radius:3px; cursor:pointer; font-weight:bold; font-size:11px;">상세보기 🔍</button>
-                                <button onclick="viewBeanUpdate(${rIdx})" style="padding:4px 6px; background:#e67e22; color:white; border:none; border-radius:3px; cursor:pointer; font-weight:bold; font-size:11px;">업데이트 ⚡</button>
-                            </td>
-                            <td>${badgeHtml}</td>
-                            <td style="font-weight:bold; text-align:left;">
-                                <button onclick="toggleFavorite('${id}', event)" style="background:none; border:none; cursor:pointer; font-size:15px; padding:0 3px 0 0; ${starColor} outline:none;" title="즐겨찾기 토글">${starIcon}</button>
-                                ${item.name}
-                            </td>
-                            <td class="col-stock">${item.rawStock} kg</td><td class="col-year">${item.year}</td><td class="col-buydate">${item.buyDate}</td>
-                            <td class="col-price">${priceFmt}</td><td class="col-indate">${item.inDate}</td><td class="col-country">${item.country}</td>
-                            <td class="col-region">${item.region}</td><td class="col-farm">${item.farm}</td><td class="col-producer">${item.producer}</td>
-                            <td class="col-altavg">${item.altAvg}</td><td class="col-variety">${item.variety}</td><td class="col-process">${item.process}</td>
-                            <td class="col-importer">${item.importer}</td><td class="col-usage">${item.usage}</td>
-                            <td class="col-note" style="text-align:left; max-width:150px; overflow:hidden; text-overflow:ellipsis;">${item.note}</td>
-                            <td class="col-mdate" style="background-color: #fffaf0;">${item.lastMeasure}</td><td class="col-density" style="background-color: #fffaf0;">${item.rawDensity}</td>
-                            <td class="col-density-pct" style="background-color: #fffaf0; font-weight:bold; color:#d35400;">${dPctDisp}</td><td class="col-density-avg" style="background-color: #fffaf0; color:#7f8c8d;">${dAvgDisp}</td>
-                            <td class="col-moisture" style="background-color: #fffaf0;">${item.rawMoisture}</td><td class="col-moisture-pct" style="background-color: #fffaf0; font-weight:bold; color:#16a085;">${mPctDisp}</td>
-                            <td class="col-moisture-avg" style="background-color: #fffaf0; color:#7f8c8d;">${mAvgDisp}</td><td class="col-size" style="background-color: #fffaf0;">${item.size}</td>
-                            <td class="col-etc" style="background-color: #fffaf0; text-align:left;">${item.etc}</td>
-                            <td class="col-altmin">${item.altMin}</td><td class="col-altmax">${item.altmax}</td><td class="col-id">${id}</td>
-                        </tr>`;
-            });
-            html += `</tbody></table></div>`;
-            document.getElementById('listContentArea').innerHTML = html;
-            applyColumnVisibility();
         } catch (err) { console.error(err); }
+    }
+
+    /* 💡 [대수술 개량] 브라우저 캐시 기반의 고속 다중 필터 & 정렬 & 화면 그리기 결합 제어엔진 */
+    function applyFiltersAndRender() {
+        if(globalCachedRows.length === 0) return;
+
+        const allAvgDensities = Object.values(globalBeanAverages).map(b => b.avgDensity).filter(v => v !== null);
+        const allAvgMoistures = Object.values(globalBeanAverages).map(b => b.avgMoisture).filter(v => v !== null);
+
+        // DOM 필터 기입값 동적 수집
+        const searchKeyword = document.getElementById('filter-search').value.toLowerCase().trim();
+        const countryFilter = document.getElementById('filter-country').value;
+        const processFilter = document.getElementById('filter-process').value;
+        const usageFilter = document.getElementById('filter-usage').value;
+        const sortCriteria = document.getElementById('sort-select').value;
+
+        // 원본 구조 보존형 가공 객체배열 빌드
+        let displayData = globalCachedRows.map((row, index) => {
+            return {
+                originalIndex: index + 2,
+                id: row[0] || '',
+                name: row[1] || '-',
+                status: row[2] || 'X',
+                stock: parseFloat(row[3]) || 0,
+                buyDate: row[4] || '-',
+                price: parseFloat(row[5]) || 0,
+                inDate: row[6] || '-',
+                year: row[7] || '-',
+                country: row[8] || '-',
+                region: row[9] || '-',
+                farm: row[10] || '-',
+                producer: row[11] || '-',
+                altMin: row[12] || '-',
+                altMax: row[13] || '-',
+                altAvg: row[14] || '-',
+                variety: row[15] || '-',
+                process: row[16] || '-',
+                importer: row[17] || '-',
+                usage: row[18] || '-',
+                note: row[19] || '-',
+                lastMeasure: row[20] || '-',
+                density: parseFloat(row[21]) || 0,
+                moisture: parseFloat(row[22]) || 0,
+                size: row[23] || '-',
+                etc: row[24] || '-',
+                rawStock: row[3] || '0',
+                rawPrice: row[5] || '-',
+                rawDensity: row[21] || '-',
+                rawMoisture: row[22] || '-'
+            };
+        });
+
+        // 1. 하위 탭 (전체 vs 즐겨찾기) 필터 적용
+        if (currentSubTab === 'fav') {
+            displayData = displayData.filter(item => localStorage.getItem('GB_FAV_' + item.id) === 'true');
+        }
+
+        // 2. 엑셀식 다중 드롭다운 필터 규칙 적용
+        if (countryFilter !== 'all') displayData = displayData.filter(item => item.country === countryFilter);
+        if (processFilter !== 'all') displayData = displayData.filter(item => item.process === processFilter);
+        if (usageFilter !== 'all') displayData = displayData.filter(item => item.usage === usageFilter);
+
+        // 3. 키워드 검색식 와일드카드 필터 적용 (이름, 노트, 품종, 생산자 등 통합 대조)
+        if (searchKeyword) {
+            displayData = displayData.filter(item => {
+                const combinedText = `${item.name} ${item.country} ${item.region} ${item.farm} ${item.producer} ${item.variety} ${item.note} ${item.usage}`.toLowerCase();
+                return combinedText.includes(searchKeyword);
+            });
+        }
+
+        // 4. 다차원 소팅 분기 레이더 작동
+        if (sortCriteria === 'default') {
+            displayData.sort((a, b) => {
+                if (a.status === 'O' && b.status !== 'O') return -1;
+                if (a.status !== 'O' && b.status === 'O') return 1;
+                return 0;
+            });
+        } else if (sortCriteria === 'name_asc') {
+            displayData.sort((a, b) => a.name.localeCompare(b.name));
+        } else if (sortCriteria === 'price_desc') {
+            displayData.sort((a, b) => b.price - a.price);
+        } else if (sortCriteria === 'price_asc') {
+            displayData.sort((a, b) => a.price - b.price);
+        } else if (sortCriteria === 'density_desc') {
+            displayData.sort((a, b) => b.density - a.density);
+        } else if (sortCriteria === 'moisture_desc') {
+            displayData.sort((a, b) => b.moisture - a.moisture);
+        } else if (sortCriteria === 'stock_desc') {
+            displayData.sort((a, b) => b.stock - a.stock);
+        }
+
+        // 결과 예외 처리
+        if (displayData.length === 0) {
+            document.getElementById('listContentArea').innerHTML = '<h3 style="color:#7f8c8d; text-align:center; padding:30px;">조건에 일치하는 생두 검색 결과가 없습니다. 필터를 변경해 보세요.</h3>';
+            return;
+        }
+
+        // HTML 그리기 스크랩 조립
+        let html = `
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="background-color: #34495e; color:white; min-width:140px;">정보 관리</th><th>재고상태</th>
+                        <th style="min-width: 200px;">커피 이름</th><th class="col-stock">잔여량</th><th class="col-year">생산 연도</th>
+                        <th class="col-buydate">구매일자</th><th class="col-price">최종 단가(원)</th><th class="col-indate">최종 입고일자</th>
+                        <th class="col-country">생산국</th><th class="col-region">상세 지역</th><th class="col-farm">농장/조합</th>
+                        <th class="col-producer">생산자</th><th class="col-altavg">평균 재배고도(m)</th><th class="col-variety">품종</th>
+                        <th class="col-process">가공</th><th class="col-importer">수입사</th><th class="col-usage">생두 용도</th>
+                        <th class="col-note">부가 정보</th><th class="col-mdate" style="background-color: #f39c12; color:white;">최종 측정일자</th>
+                        <th class="col-density" style="background-color: #f39c12; color:white;">밀도(g/L)</th><th class="col-density-pct" style="background-color: #f39c12; color:white;">밀도(백분위)</th>
+                        <th class="col-density-avg" style="background-color: #f39c12; color:white;">밀도(평균)</th><th class="col-moisture" style="background-color: #f39c12; color:white;">수분(%)</th>
+                        <th class="col-moisture-pct" style="background-color: #f39c12; color:white;">수분(백분위)</th><th class="col-moisture-avg" style="background-color: #f39c12; color:white;">수분(평균)</th>
+                        <th class="col-size" style="background-color: #f39c12; color:white;">크기</th><th class="col-etc" style="background-color: #f39c12; color:white;">기타</th>
+                        <th class="col-altmin">재배고도 최저(m)</th><th class="col-altmax">재배고도 최고(m)</th><th class="col-id">고유 ID</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+        displayData.forEach(item => {
+            const rIdx = item.originalIndex; const id = item.id;
+            const badgeHtml = item.status === 'O' ? '<span class="badge badge-in">재고있음</span>' : '<span class="badge badge-out">소진됨</span>';
+            const priceFmt = !isNaN(item.price) && item.rawPrice !== '-' ? item.price.toLocaleString() : item.rawPrice;
+            
+            const averages = globalBeanAverages[id] || { avgDensity: null, avgMoisture: null };
+            const dAvgDisp = averages.avgDensity !== null ? Math.round(averages.avgDensity) : '-';
+            const mAvgDisp = averages.avgMoisture !== null ? averages.avgMoisture.toFixed(1) : '-';
+            const dPctDisp = averages.avgDensity !== null ? getPercentileRankString(averages.avgDensity, allAvgDensities) : '-';
+            const mPctDisp = averages.avgMoisture !== null ? getPercentileRankString(averages.avgMoisture, allAvgMoistures) : '-';
+
+            const isFav = localStorage.getItem('GB_FAV_' + id) === 'true';
+            const starIcon = isFav ? '⭐' : '☆';
+            const starColor = isFav ? 'color: #f1c40f;' : 'color: #cbd5e0;';
+
+            html += `<tr>
+                        <td>
+                            <button onclick="viewBeanHistory(${rIdx})" style="padding:4px 6px; margin-right:3px; background:#34495e; color:white; border:none; border-radius:3px; cursor:pointer; font-weight:bold; font-size:11px;">상세보기 🔍</button>
+                            <button onclick="viewBeanUpdate(${rIdx})" style="padding:4px 6px; background:#e67e22; color:white; border:none; border-radius:3px; cursor:pointer; font-weight:bold; font-size:11px;">업데이트 ⚡</button>
+                        </td>
+                        <td>${badgeHtml}</td>
+                        <td style="font-weight:bold; text-align:left;">
+                            <button onclick="toggleFavorite('${id}', event)" style="background:none; border:none; cursor:pointer; font-size:14px; padding:0 3px 0 0; ${starColor} outline:none;" title="즐겨찾기 지정">${starIcon}</button>
+                            ${item.name}
+                        </td>
+                        <td class="col-stock">${item.rawStock} kg</td><td class="col-year">${item.year}</td><td class="col-buydate">${item.buyDate}</td>
+                        <td class="col-price">${priceFmt}</td><td class="col-indate">${item.inDate}</td><td class="col-country">${item.country}</td>
+                        <td class="col-region">${item.region}</td><td class="col-farm">${item.farm}</td><td class="col-producer">${item.producer}</td>
+                        <td class="col-altavg">${item.altAvg}</td><td class="col-variety">${item.variety}</td><td class="col-process">${item.process}</td>
+                        <td class="col-importer">${item.importer}</td><td class="col-usage">${item.usage}</td>
+                        <td class="col-note" style="text-align:left; max-width:150px; overflow:hidden; text-overflow:ellipsis;">${item.note}</td>
+                        <td class="col-mdate" style="background-color: #fffaf0;">${item.lastMeasure}</td><td class="col-density" style="background-color: #fffaf0;">${item.rawDensity}</td>
+                        <td class="col-density-pct" style="background-color: #fffaf0; font-weight:bold; color:#d35400;">${dPctDisp}</td><td class="col-density-avg" style="background-color: #fffaf0; color:#7f8c8d;">${dAvgDisp}</td>
+                        <td class="col-moisture" style="background-color: #fffaf0;">${item.rawMoisture}</td><td class="col-moisture-pct" style="background-color: #fffaf0; font-weight:bold; color:#16a085;">${mPctDisp}</td>
+                        <td class="col-moisture-avg" style="background-color: #fffaf0; color:#7f8c8d;">${mAvgDisp}</td><td class="col-size" style="background-color: #fffaf0;">${item.size}</td>
+                        <td class="col-etc" style="background-color: #fffaf0; text-align:left;">${item.etc}</td>
+                        <td class="col-altmin">${item.altMin}</td><td class="col-altmax">${item.altMax}</td><td class="col-id">${id}</td>
+                    </tr>`;
+        });
+        html += `</tbody></table></div>`;
+        document.getElementById('listContentArea').innerHTML = html;
+        applyColumnVisibility();
     }
 
     function viewBeanHistory(sheetRowIndex) {
