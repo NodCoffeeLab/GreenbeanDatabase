@@ -105,8 +105,8 @@
             </ul>
         </div>
     </div>
-</div>
-    </div> <div style="margin-top: 25px; padding: 20px 10px; border-top: 1px solid #e2e8f0; color: #4a5568;">
+
+    <div style="margin-top: 25px; padding: 20px 10px; border-top: 1px solid #e2e8f0; color: #4a5568;">
         <h3 style="margin-top: 0; color: #2c3e50; font-size: 14px; font-weight: bold;">📅 2026.7.15 업데이트 내역</h3>
         <ul style="font-size: 13px; line-height: 1.8; padding-left: 20px; margin-bottom: 0; color: #555;">
             <li>1. 생두 정렬, 필터 기능을 추가했습니다.</li>
@@ -116,7 +116,6 @@
         </ul>
     </div>
 
-    <div class="dashboard" id="dashboardSection"> <div class="config-box">
     <div class="dashboard" id="dashboardSection">
         <div class="config-box">
             <div style="flex: 1;">
@@ -139,7 +138,8 @@
                     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; font-size: 12px; background: white; padding: 10px; border-radius: 4px; border: 1px solid #e2e8f0;">
                         <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-stock" checked onchange="applyColumnVisibility()"> 잔여량</label>
                         <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-year" checked onchange="applyColumnVisibility()"> 생산 연도</label>
-                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-buydate" checked onchange="applyColumnVisibility()"> 입력일자</label> <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-indate" checked onchange="applyColumnVisibility()"> 최종 입고일자</label>
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-buydate" checked onchange="applyColumnVisibility()"> 입력일자</label> 
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-indate" checked onchange="applyColumnVisibility()"> 최종 입고일자</label>
                         <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-price" checked onchange="applyColumnVisibility()"> 최종 단가</label> 
                         <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-country" checked onchange="applyColumnVisibility()"> 생산국</label>
                         <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-region" checked onchange="applyColumnVisibility()"> 상세 지역</label>
@@ -218,7 +218,8 @@
                     <label>최초 구매 단가(원)</label><input type="number" id="bean_price" placeholder="예: 25000">
                 </div>
                 <div class="form-group">
-                    <label>입력 일자</label><input type="date" id="bean_buyDate"> </div>
+                    <label>입력 일자</label><input type="date" id="bean_buyDate"> 
+                </div>
                 <div class="form-group">
                     <label>창고 입고 일자</label><input type="date" id="bean_inDate">
                 </div>
@@ -428,6 +429,7 @@
         }
     }
 
+    // 컬럼 보임/숨김 제어 연동을 동기화하기 위한 갱신용
     function applyColumnVisibility() {
         document.querySelectorAll('.col-toggle-checkbox').forEach(cb => {
             const colClass = cb.dataset.col;
@@ -555,10 +557,8 @@
             displayData.sort((a, b) => {
                 let valA = a[currentSortCol];
                 let valB = b[currentSortCol];
-                
                 if (valA === '-' || valA === '') return 1;
                 if (valB === '-' || valB === '') return -1;
-
                 if (typeof valA === 'number' && typeof valB === 'number') {
                     return currentSortOrder === 'asc' ? valA - valB : valB - valA;
                 } else {
@@ -578,7 +578,7 @@
             return;
         }
 
-        // 💡 [순서 제안 반영] 입력일자 -> 최종 입고일자 -> 최종 단자 순서로 th 재배치 완료
+        // 💡 [순서 교정] 입력일자 -> 최종 입고일자 -> 최종 단가 순서 매핑 헤더 및 화살표 세팅
         let html = `
         <div class="table-wrapper">
             <table>
@@ -633,7 +633,7 @@
             const starIcon = isFav ? '⭐' : '☆';
             const starColor = isFav ? 'color: #f1c40f;' : 'color: #cbd5e0;';
 
-            // 💡 [순서 제안 반영] 입력일자 -> 최종 입고일자 -> 최종 단자 순서로 td 매핑 출력 완료
+            // 💡 [순서 교정] 본문 td도 입력일자 -> 최종 입고일자 -> 최종 단자 순서로 재배치 출력
             html += `<tr>
                         <td>
                             <button onclick="viewBeanHistory(${rIdx})" style="padding:4px 6px; margin-right:3px; background:#34495e; color:white; border:none; border-radius:3px; cursor:pointer; font-weight:bold; font-size:11px;">상세보기 🔍</button>
