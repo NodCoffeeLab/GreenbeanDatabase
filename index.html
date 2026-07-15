@@ -130,8 +130,8 @@
                         <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-stock" checked onchange="applyColumnVisibility()"> 잔여량</label>
                         <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-year" checked onchange="applyColumnVisibility()"> 생산 연도</label>
                         <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-buydate" checked onchange="applyColumnVisibility()"> 구매일자</label>
-                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-price" checked onchange="applyColumnVisibility()"> 최종 단가</label> 
                         <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-indate" checked onchange="applyColumnVisibility()"> 최종 입고일자</label>
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-price" checked onchange="applyColumnVisibility()"> 최종 구매단가</label> 
                         <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-country" checked onchange="applyColumnVisibility()"> 생산국</label>
                         <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-region" checked onchange="applyColumnVisibility()"> 상세 지역</label>
                         <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-farm" checked onchange="applyColumnVisibility()"> 농장/조합</label>
@@ -167,7 +167,7 @@
                 <div style="grid-column: span 12; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #edf2f7; padding-bottom: 12px; flex-wrap: wrap;">
                     <button class="sub-nav-btn active" id="subtab-all" onclick="changeSubTab('all')">📁 전체 생두</button>
                     <button class="sub-nav-btn fav-style" id="subtab-fav" onclick="changeSubTab('fav')">⭐ 즐겨찾는 생두</button>
-                    <span style="margin-left: auto; font-size: 12px; color: #7f8c8d; font-weight: bold;">💡 표 상단의 제목을 클릭하면 엑셀처럼 실시간 오름차순/내림차순 정렬이 됩니다.</span>
+                    <span style="margin-left: auto; font-size: 12px; color: #7f8c8d; font-weight: bold;">💡 표 상단의 제목을 클릭하여 정렬할 수 있습니다.</span>
                 </div>
                 
                 <div class="filter-group" style="grid-column: span 2;">
@@ -203,16 +203,16 @@
                     <label>커피 이름 (필수)</label><input type="text" id="bean_name" placeholder="">
                 </div>
                 <div class="form-group">
-                    <label>초기 입고량(kg)</label><input type="number" id="bean_stock" placeholder="예: 20" value="0">
+                    <label>입고량(kg)</label><input type="number" id="bean_stock" placeholder="예: 20" value="0">
                 </div>
                 <div class="form-group">
-                    <label>최초 구매 단가(원)</label><input type="number" id="bean_price" placeholder="예: 25000">
+                    <label>구매 단가(원)</label><input type="number" id="bean_price" placeholder="예: 25000">
                 </div>
                 <div class="form-group">
                     <label>구매 일자</label><input type="date" id="bean_buyDate">
                 </div>
                 <div class="form-group">
-                    <label>창고 입고 일자</label><input type="date" id="bean_inDate">
+                    <label>입고 일자</label><input type="date" id="bean_inDate">
                 </div>
                 <div class="form-group">
                     <label>생산 연도 (크롭)</label><input type="text" id="bean_year" placeholder="예: 23/24">
@@ -230,10 +230,10 @@
                     <label>생산자</label><input type="text" id="bean_producer" placeholder="">
                 </div>
                 <div class="form-group">
-                    <label>재배고도 최저(m)</label><input type="number" id="bean_altMin" placeholder="예: 1800">
+                    <label>재배고도 최저(m)</label><input type="number" id="bean_altMin" placeholder="예: 1800~2100인 경우 1800">
                 </div>
                 <div class="form-group">
-                    <label>재배고도 최고(m)</label><input type="number" id="bean_altMax" placeholder="예: 2100">
+                    <label>재배고도 최고(m)</label><input type="number" id="bean_altMax" placeholder="예: 1800~2100인 경우 2100">
                 </div>
                 <div class="form-group">
                     <label>품종</label><input type="text" id="bean_variety" placeholder="">
@@ -589,8 +589,8 @@
                         <th onclick="handleHeaderSort('stock')" class="col-stock">잔여량${getSortIndicator('stock')}</th>
                         <th onclick="handleHeaderSort('year')" class="col-year">생산 연도${getSortIndicator('year')}</th>
                         <th onclick="handleHeaderSort('buyDate')" class="col-buydate">구매일자${getSortIndicator('buyDate')}</th>
-                        <th onclick="handleHeaderSort('price')" class="col-price">최종 단가(원)${getSortIndicator('price')}</th>
                         <th onclick="handleHeaderSort('inDate')" class="col-indate">최종 입고일자${getSortIndicator('inDate')}</th>
+                        <th onclick="handleHeaderSort('price')" class="col-price">최종 구매단가(원)${getSortIndicator('price')}</th>
                         <th onclick="handleHeaderSort('country')" class="col-country">생산국${getSortIndicator('country')}</th>
                         <th onclick="handleHeaderSort('region')" class="col-region">상세 지역${getSortIndicator('region')}</th>
                         <th onclick="handleHeaderSort('farm')" class="col-farm">농장/조합${getSortIndicator('farm')}</th>
