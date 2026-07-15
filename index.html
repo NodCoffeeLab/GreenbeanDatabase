@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>생두 정보 관리 도구 2026.7.12</title>
+    <title>생두 정보 관리 도구 2026.7.15</title>
     <style>
         body { font-family: 'Malgun Gothic', sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; }
         .container { max-width: 1500px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
@@ -40,7 +40,6 @@
         .table-wrapper { overflow-x: auto; background: #fff; border: 1px solid #bdc3c7; border-radius: 4px; margin-bottom: 30px;}
         table { width: max-content; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
         
-        /* 💡 [정렬 개량] 테이블 헤더에 마우스 커서 손가락 표시 및 선택 방지 스타일 주입 */
         th { background-color: #2c3e50; color: white; padding: 10px 15px; text-align: center; border-right: 1px solid #34495e; position: sticky; top: 0; cursor: pointer; user-select: none; }
         th:hover { background-color: #34495e; }
         td { padding: 10px 15px; border-right: 1px solid #ecf0f1; border-bottom: 1px solid #ecf0f1; text-align: center; }
@@ -53,10 +52,10 @@
 
         /* 입력 폼 스타일 */
         .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; background: #fdfdfd; padding: 20px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 15px;}
-        .form-group { display: flex; flex-direction: column; }
-        .form-group label { font-weight: bold; font-size: 13px; margin-bottom: 5px; color: #555;}
-        .form-group input, .form-group select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
-        .form-group.full-width { grid-column: span 3; }
+        .form-grid .form-group { display: flex; flex-direction: column; }
+        .form-grid .form-group label { font-weight: bold; font-size: 13px; margin-bottom: 5px; color: #555;}
+        .form-grid .form-group input, .form-grid .form-group select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        .form-grid .form-group.full-width { grid-column: span 3; }
         
         .submit-btn { background-color: #27ae60; color: white; padding: 12px 20px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 10px; width: 100%; font-size: 16px;}
         .submit-btn:hover { background-color: #219a52; }
@@ -72,7 +71,7 @@
 <body>
 
 <div class="container">
-    <h1>🌱 생두 정보 관리 도구 2026.7.12</h1>
+    <h1>🌱 생두 정보 관리 도구 2026.7.15</h1>
     
     <div class="auth-section" id="authSection">
         <p id="authMessage">구글 라이브러리를 불러오는 중입니다. 잠시만 기다려주세요...</p>
@@ -106,7 +105,18 @@
             </ul>
         </div>
     </div>
+</div>
+    </div> <div style="margin-top: 25px; padding: 20px 10px; border-top: 1px solid #e2e8f0; color: #4a5568;">
+        <h3 style="margin-top: 0; color: #2c3e50; font-size: 14px; font-weight: bold;">📅 2026.7.15 업데이트 내역</h3>
+        <ul style="font-size: 13px; line-height: 1.8; padding-left: 20px; margin-bottom: 0; color: #555;">
+            <li>1. 생두 정렬, 필터 기능을 추가했습니다.</li>
+            <li>2. 생두 목록에 표시되는 열 순서를 변경했습니다.</li>
+            <li>3. 구매일자를 입력일자로 변경했습니다.</li>
+            <li>4. 항목 입력 시 예시 문구를 상세하게 변경했습니다.</li>
+        </ul>
+    </div>
 
+    <div class="dashboard" id="dashboardSection"> <div class="config-box">
     <div class="dashboard" id="dashboardSection">
         <div class="config-box">
             <div style="flex: 1;">
@@ -129,9 +139,8 @@
                     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; font-size: 12px; background: white; padding: 10px; border-radius: 4px; border: 1px solid #e2e8f0;">
                         <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-stock" checked onchange="applyColumnVisibility()"> 잔여량</label>
                         <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-year" checked onchange="applyColumnVisibility()"> 생산 연도</label>
-                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-buydate" checked onchange="applyColumnVisibility()"> 구매일자</label>
-                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-indate" checked onchange="applyColumnVisibility()"> 최종 입고일자</label>
-                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-price" checked onchange="applyColumnVisibility()"> 최종 구매단가</label> 
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-buydate" checked onchange="applyColumnVisibility()"> 입력일자</label> <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-indate" checked onchange="applyColumnVisibility()"> 최종 입고일자</label>
+                        <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-price" checked onchange="applyColumnVisibility()"> 최종 단가</label> 
                         <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-country" checked onchange="applyColumnVisibility()"> 생산국</label>
                         <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-region" checked onchange="applyColumnVisibility()"> 상세 지역</label>
                         <label><input type="checkbox" class="col-toggle-checkbox" data-col="col-farm" checked onchange="applyColumnVisibility()"> 농장/조합</label>
@@ -167,7 +176,7 @@
                 <div style="grid-column: span 12; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #edf2f7; padding-bottom: 12px; flex-wrap: wrap;">
                     <button class="sub-nav-btn active" id="subtab-all" onclick="changeSubTab('all')">📁 전체 생두</button>
                     <button class="sub-nav-btn fav-style" id="subtab-fav" onclick="changeSubTab('fav')">⭐ 즐겨찾는 생두</button>
-                    <span style="margin-left: auto; font-size: 12px; color: #7f8c8d; font-weight: bold;">💡 표 상단의 제목을 클릭하여 정렬할 수 있습니다.</span>
+                    <span style="margin-left: auto; font-size: 12px; color: #7f8c8d; font-weight: bold;">💡 표 상단의 제목을 클릭하여 정렬</span>
                 </div>
                 
                 <div class="filter-group" style="grid-column: span 2;">
@@ -203,16 +212,15 @@
                     <label>커피 이름 (필수)</label><input type="text" id="bean_name" placeholder="">
                 </div>
                 <div class="form-group">
-                    <label>입고량(kg)</label><input type="number" id="bean_stock" placeholder="예: 20" value="0">
+                    <label>초기 입고량(kg)</label><input type="number" id="bean_stock" placeholder="예: 20" value="0">
                 </div>
                 <div class="form-group">
-                    <label>구매 단가(원)</label><input type="number" id="bean_price" placeholder="예: 25000">
+                    <label>최초 구매 단가(원)</label><input type="number" id="bean_price" placeholder="예: 25000">
                 </div>
                 <div class="form-group">
-                    <label>구매 일자</label><input type="date" id="bean_buyDate">
-                </div>
+                    <label>입력 일자</label><input type="date" id="bean_buyDate"> </div>
                 <div class="form-group">
-                    <label>입고 일자</label><input type="date" id="bean_inDate">
+                    <label>창고 입고 일자</label><input type="date" id="bean_inDate">
                 </div>
                 <div class="form-group">
                     <label>생산 연도 (크롭)</label><input type="text" id="bean_year" placeholder="예: 23/24">
@@ -230,7 +238,7 @@
                     <label>생산자</label><input type="text" id="bean_producer" placeholder="">
                 </div>
                 <div class="form-group">
-                    <label>재배고도 최저(m)</label><input type="number" id="bean_altMin" placeholder="예: 1800~2100인 경우 1800">
+                    <label>재배고도 최저(m)</label><input type="number" id="bean_altMin" placeholder="예: 1800~2000인 경우 1800">
                 </div>
                 <div class="form-group">
                     <label>재배고도 최고(m)</label><input type="number" id="bean_altMax" placeholder="예: 1800~2100인 경우 2100">
@@ -270,7 +278,6 @@
     let globalBeanAverages = {};   
     let currentSubTab = 'all';     
 
-    // 💡 [3번 구현] 엑셀식 상태 관리를 위한 글로벌 정렬 변수 선언
     let currentSortCol = 'default';
     let currentSortOrder = 'asc';
 
@@ -372,7 +379,6 @@
         document.getElementById('subtab-all').classList.remove('active');
         document.getElementById('subtab-fav').classList.remove('active');
         if(mode === 'all') document.getElementById('subtab-all').classList.add('active');
-        if(mode === 'fav') document.getElementById('subtab-fav').classList.add('add');
         if(mode === 'fav') document.getElementById('subtab-fav').classList.add('active');
         applyFiltersAndRender(); 
     }
@@ -384,7 +390,6 @@
         applyFiltersAndRender(); 
     }
 
-    // 💡 [3번 구현] 헤더를 마우스로 클릭할 때 정렬 대상을 교체해 주는 이벤트 제어 함수
     function handleHeaderSort(colKey) {
         if (currentSortCol === colKey) {
             currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
@@ -392,10 +397,9 @@
             currentSortCol = colKey;
             currentSortOrder = 'asc';
         }
-        applyFiltersAndRender(); // 정렬 데이터 즉시 갱신
+        applyFiltersAndRender(); 
     }
 
-    // 💡 [3번 구현] 현재 정렬 규칙에 맞춰 헤더 텍스트 옆에 화살표 기호를 박아주는 유틸리티
     function getSortIndicator(colKey) {
         if (currentSortCol !== colKey) return ' ↕';
         return currentSortOrder === 'asc' ? ' ▲' : ' ▼';
@@ -472,7 +476,7 @@
             });
 
             setupExcelDropdownFilter('filter-country', masterRows.map(r => r[8]));
-            setupExcelDropdownFilter('filter-variety', masterRows.map(r => r[15])); // 💡 품종 필터 동적 생성 위임
+            setupExcelDropdownFilter('filter-variety', masterRows.map(r => r[15])); 
             setupExcelDropdownFilter('filter-process', masterRows.map(r => r[16]));
             setupExcelDropdownFilter('filter-usage', masterRows.map(r => r[18]));
 
@@ -489,7 +493,7 @@
 
         const searchKeyword = document.getElementById('filter-search').value.toLowerCase().trim();
         const countryFilter = document.getElementById('filter-country').value;
-        const varietyFilter = document.getElementById('filter-variety').value; // 💡 품종 변수 수집
+        const varietyFilter = document.getElementById('filter-variety').value; 
         const processFilter = document.getElementById('filter-process').value;
         const usageFilter = document.getElementById('filter-usage').value;
 
@@ -536,7 +540,7 @@
         }
 
         if (countryFilter !== 'all') displayData = displayData.filter(item => item.country === countryFilter);
-        if (varietyFilter !== 'all') displayData = displayData.filter(item => item.variety === varietyFilter); // 💡 품종 필터링 룰 삽입
+        if (varietyFilter !== 'all') displayData = displayData.filter(item => item.variety === varietyFilter); 
         if (processFilter !== 'all') displayData = displayData.filter(item => item.process === processFilter);
         if (usageFilter !== 'all') displayData = displayData.filter(item => item.usage === usageFilter);
 
@@ -547,13 +551,11 @@
             });
         }
 
-        // 💡 [3번 구현] 엑셀식 동적 다차원 정렬 알고리즘 브랜치 작동
         if (currentSortCol !== 'default') {
             displayData.sort((a, b) => {
                 let valA = a[currentSortCol];
                 let valB = b[currentSortCol];
                 
-                // 데이터가 공백이거나 하이픈인 비어있는 열은 정렬 시 언제나 맨 아래로 밀리도록 설계
                 if (valA === '-' || valA === '') return 1;
                 if (valB === '-' || valB === '') return -1;
 
@@ -564,7 +566,6 @@
                 }
             });
         } else {
-            // 기본 정렬: 재고있음 우선
             displayData.sort((a, b) => {
                 if (a.status === 'O' && b.status !== 'O') return -1;
                 if (a.status !== 'O' && b.status === 'O') return 1;
@@ -577,7 +578,7 @@
             return;
         }
 
-        // 💡 [1번, 3번 가이드라인 구현] 각 헤더 `<th>` 영역 클릭 시 정렬 핸들러 작동 및 화살표 박음 처리
+        // 💡 [순서 제안 반영] 입력일자 -> 최종 입고일자 -> 최종 단자 순서로 th 재배치 완료
         let html = `
         <div class="table-wrapper">
             <table>
@@ -588,9 +589,9 @@
                         <th onclick="handleHeaderSort('name')" style="min-width: 200px;">커피 이름${getSortIndicator('name')}</th>
                         <th onclick="handleHeaderSort('stock')" class="col-stock">잔여량${getSortIndicator('stock')}</th>
                         <th onclick="handleHeaderSort('year')" class="col-year">생산 연도${getSortIndicator('year')}</th>
-                        <th onclick="handleHeaderSort('buyDate')" class="col-buydate">구매일자${getSortIndicator('buyDate')}</th>
+                        <th onclick="handleHeaderSort('buyDate')" class="col-buydate">입력일자${getSortIndicator('buyDate')}</th>
                         <th onclick="handleHeaderSort('inDate')" class="col-indate">최종 입고일자${getSortIndicator('inDate')}</th>
-                        <th onclick="handleHeaderSort('price')" class="col-price">최종 구매단가(원)${getSortIndicator('price')}</th>
+                        <th onclick="handleHeaderSort('price')" class="col-price">최종 단가(원)${getSortIndicator('price')}</th>
                         <th onclick="handleHeaderSort('country')" class="col-country">생산국${getSortIndicator('country')}</th>
                         <th onclick="handleHeaderSort('region')" class="col-region">상세 지역${getSortIndicator('region')}</th>
                         <th onclick="handleHeaderSort('farm')" class="col-farm">농장/조합${getSortIndicator('farm')}</th>
@@ -632,6 +633,7 @@
             const starIcon = isFav ? '⭐' : '☆';
             const starColor = isFav ? 'color: #f1c40f;' : 'color: #cbd5e0;';
 
+            // 💡 [순서 제안 반영] 입력일자 -> 최종 입고일자 -> 최종 단자 순서로 td 매핑 출력 완료
             html += `<tr>
                         <td>
                             <button onclick="viewBeanHistory(${rIdx})" style="padding:4px 6px; margin-right:3px; background:#34495e; color:white; border:none; border-radius:3px; cursor:pointer; font-weight:bold; font-size:11px;">상세보기 🔍</button>
@@ -642,8 +644,11 @@
                             <button onclick="toggleFavorite('${id}', event)" style="background:none; border:none; cursor:pointer; font-size:14px; padding:0 3px 0 0; ${starColor} outline:none;" title="즐겨찾기 지정">${starIcon}</button>
                             ${item.name}
                         </td>
-                        <td class="col-stock">${item.rawStock} kg</td><td class="col-year">${item.year}</td><td class="col-buydate">${item.buyDate}</td>
-                        <td class="col-price">${priceFmt}</td><td class="col-indate">${item.inDate}</td><td class="col-country">${item.country}</td>
+                        <td class="col-stock">${item.rawStock} kg</td><td class="col-year">${item.year}</td>
+                        <td class="col-buydate">${item.buyDate}</td>
+                        <td class="col-indate">${item.inDate}</td>
+                        <td class="col-price">${priceFmt}</td>
+                        <td class="col-country">${item.country}</td>
                         <td class="col-region">${item.region}</td><td class="col-farm">${item.farm}</td><td class="col-producer">${item.producer}</td>
                         <td class="col-altavg">${item.rawAltAvg}</td><td class="col-variety">${item.variety}</td><td class="col-process">${item.process}</td>
                         <td class="col-importer">${item.importer}</td><td class="col-usage">${item.usage}</td>
@@ -825,7 +830,7 @@
         updatedRow[2] = finalStatus; updatedRow[3] = finalStock;  
         if(upPrice) updatedRow[5] = upPrice; 
         if(upInDate) updatedRow[6] = upInDate; if(upUsage) updatedRow[18] = upUsage; 
-        if(upMeasureDate) updatedRow[20] = updatedRow[20] = upMeasureDate; if(upDensity) updatedRow[21] = upDensity; 
+        if(upMeasureDate) updatedRow[20] = upMeasureDate; if(upDensity) updatedRow[21] = upDensity; 
         if(upMoisture) updatedRow[22] = upMoisture; if(upSize) updatedRow[23] = upSize; 
         if(upEtc) updatedRow[24] = upEtc;   
 
