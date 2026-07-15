@@ -18,7 +18,7 @@
         .nav-btn { background-color: #95a5a6; padding: 10px 15px; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .nav-btn.active { background-color: #2c3e50; }
         
-        /* 💡 [개량] 엑셀식 다중 필터 및 검색 레이아웃 그리드 스타일 상향 정의 */
+        /* 엑셀식 다중 필터 및 검색 레이아웃 그리드 스타일 */
         .list-control-bar { 
             display: grid; 
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
@@ -39,7 +39,10 @@
         /* 테이블 & 가로 스크롤 스타일 */
         .table-wrapper { overflow-x: auto; background: #fff; border: 1px solid #bdc3c7; border-radius: 4px; margin-bottom: 30px;}
         table { width: max-content; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
-        th { background-color: #2c3e50; color: white; padding: 10px 15px; text-align: center; border-right: 1px solid #34495e; position: sticky; top: 0;}
+        
+        /* 💡 [정렬 개량] 테이블 헤더에 마우스 커서 손가락 표시 및 선택 방지 스타일 주입 */
+        th { background-color: #2c3e50; color: white; padding: 10px 15px; text-align: center; border-right: 1px solid #34495e; position: sticky; top: 0; cursor: pointer; user-select: none; }
+        th:hover { background-color: #34495e; }
         td { padding: 10px 15px; border-right: 1px solid #ecf0f1; border-bottom: 1px solid #ecf0f1; text-align: center; }
         tr:hover { background-color: #f1f8ff; }
         
@@ -164,28 +167,20 @@
                 <div style="grid-column: span 12; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #edf2f7; padding-bottom: 12px; flex-wrap: wrap;">
                     <button class="sub-nav-btn active" id="subtab-all" onclick="changeSubTab('all')">📁 전체 생두</button>
                     <button class="sub-nav-btn fav-style" id="subtab-fav" onclick="changeSubTab('fav')">⭐ 즐겨찾는 생두</button>
-                    
-                    <div style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
-                        <label for="sort-select" style="font-size: 13px; font-weight: bold; color: #2c3e50;">🔀 정렬 기준:</label>
-                        <select id="sort-select" onchange="applyFiltersAndRender()" style="padding: 6px; border-radius: 4px; border: 1px solid #ccc; font-weight: bold; font-size: 13px;">
-                            <option value="default">재고있음 우선 (기본)</option>
-                            <option value="name_asc">커피 이름순 (A-Z, ㄱ-ㅎ)</option>
-                            <option value="price_desc">최종 단가 높은순</option>
-                            <option value="price_asc">최종 단가 낮은순</option>
-                            <option value="density_desc">밀도 높은순</option>
-                            <option value="moisture_desc">수분 높은순</option>
-                            <option value="stock_desc">잔여량 많은순</option>
-                        </select>
-                    </div>
+                    <span style="margin-left: auto; font-size: 12px; color: #7f8c8d; font-weight: bold;">💡 표 상단의 제목을 클릭하면 엑셀처럼 실시간 오름차순/내림차순 정렬이 됩니다.</span>
                 </div>
                 
-                <div class="filter-group">
-                    <label>🔍 키워드 검색 (이름/노트/생산자 등)</label>
-                    <input type="text" id="filter-search" oninput="applyFiltersAndRender()" placeholder="검색어 입력...">
+                <div class="filter-group" style="grid-column: span 2;">
+                    <label>🔍 키워드 통합 검색</label>
+                    <input type="text" id="filter-search" oninput="applyFiltersAndRender()" placeholder="커피명, 노트, 생산자 등...">
                 </div>
                 <div class="filter-group">
                     <label>🌍 생산국 필터</label>
                     <select id="filter-country" onchange="applyFiltersAndRender()"></select>
+                </div>
+                <div class="filter-group">
+                    <label>🌾 품종 필터</label>
+                    <select id="filter-variety" onchange="applyFiltersAndRender()"></select>
                 </div>
                 <div class="filter-group">
                     <label>🧪 가공 방식 필터</label>
@@ -270,10 +265,14 @@
     const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
 
     let tokenClient; let gapiInited = false; let gisInited = false;
-    let globalCachedRows = [];     // 마스터 원본 보존 행 캐시
-    let globalBeanLogs = {};       // 생두별 업데이트 로그 그룹 캐시
-    let globalBeanAverages = {};   // 생두별 계산된 평균값 저장소
-    let currentSubTab = 'all';     // 'all' 또는 'fav' 상태 제어
+    let globalCachedRows = [];     
+    let globalBeanLogs = {};       
+    let globalBeanAverages = {};   
+    let currentSubTab = 'all';     
+
+    // 💡 [3번 구현] 엑셀식 상태 관리를 위한 글로벌 정렬 변수 선언
+    let currentSortCol = 'default';
+    let currentSortOrder = 'asc';
 
     function gapiLoaded() { gapi.load('client', initializeGapiClient); }
     async function initializeGapiClient() {
@@ -368,31 +367,45 @@
         }
     }
 
-    /* 💡 [신규 개량] 전체 / 즐겨찾기 탭 필터링 변경 */
     function changeSubTab(mode) {
         currentSubTab = mode;
         document.getElementById('subtab-all').classList.remove('active');
         document.getElementById('subtab-fav').classList.remove('active');
         if(mode === 'all') document.getElementById('subtab-all').classList.add('active');
+        if(mode === 'fav') document.getElementById('subtab-fav').classList.add('add');
         if(mode === 'fav') document.getElementById('subtab-fav').classList.add('active');
-        applyFiltersAndRender(); // 0.1초 고속 로컬 연산 트리거 호출
+        applyFiltersAndRender(); 
     }
 
-    /* 💡 [신규 개량] 즐겨찾기 On/Off 하트 스위치 로컬저장소 연동 제어 */
     function toggleFavorite(beanId, event) {
-        event.stopPropagation(); // 정보 관리 버튼 버블링 차단
+        event.stopPropagation(); 
         const isFav = localStorage.getItem('GB_FAV_' + beanId) === 'true';
         localStorage.setItem('GB_FAV_' + beanId, !isFav ? 'true' : 'false');
-        applyFiltersAndRender(); // 무거운 네트워크 재통신 없이 화면 스크랩 렌더링만 갱신
+        applyFiltersAndRender(); 
     }
 
-    /* 💡 [신규 개량] 데이터에서 유니크한 원본 값들만 추적해 엑셀식 드롭다운 목록 옵션을 빌드하는 메커니즘 */
+    // 💡 [3번 구현] 헤더를 마우스로 클릭할 때 정렬 대상을 교체해 주는 이벤트 제어 함수
+    function handleHeaderSort(colKey) {
+        if (currentSortCol === colKey) {
+            currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSortCol = colKey;
+            currentSortOrder = 'asc';
+        }
+        applyFiltersAndRender(); // 정렬 데이터 즉시 갱신
+    }
+
+    // 💡 [3번 구현] 현재 정렬 규칙에 맞춰 헤더 텍스트 옆에 화살표 기호를 박아주는 유틸리티
+    function getSortIndicator(colKey) {
+        if (currentSortCol !== colKey) return ' ↕';
+        return currentSortOrder === 'asc' ? ' ▲' : ' ▼';
+    }
+
     function setupExcelDropdownFilter(elementId, valuesList) {
         const el = document.getElementById(elementId);
         if(!el) return;
-        const savedSelection = el.value || 'all'; // 갱신 전 선택되어 있던 유저값 보존
+        const savedSelection = el.value || 'all'; 
         
-        // 중복 제거, 공백 제거, 하이픈 제거 후 가나다순 정렬
         const cleanedUniqueValues = [...new Set(valuesList)]
             .map(v => v ? v.trim() : '')
             .filter(v => v && v !== '-')
@@ -404,7 +417,6 @@
         });
         el.innerHTML = optionsHtml;
         
-        // 기존 선택값 복원 동기화
         if(cleanedUniqueValues.includes(savedSelection)) {
             el.value = savedSelection;
         } else {
@@ -429,7 +441,6 @@
         return `상위 ${pct}%`;
     }
 
-    // 통신 동기화 엔진 (구글 데이터만 깔끔하게 메모리에 업로드)
     async function fetchBeanList() {
         if(!SPREADSHEET_ID) { alert("연동된 구글 시트 ID가 유실되었습니다."); return; }
         document.getElementById('listContentArea').innerHTML = '<h3 style="color: #3498db;">🔄 구글 데이터베이스를 동기화하는 중입니다...</h3>';
@@ -460,32 +471,28 @@
                 globalBeanAverages[beanId] = { avgDensity: avgD, avgMoisture: avgM };
             });
 
-            // 💡 [엑셀식 빌더 추가] 장부를 다 긁어왔으면 생산국, 가공 방식, 용도 열에서 고유 항목들만 추출해 필터 생성기 가동
             setupExcelDropdownFilter('filter-country', masterRows.map(r => r[8]));
+            setupExcelDropdownFilter('filter-variety', masterRows.map(r => r[15])); // 💡 품종 필터 동적 생성 위임
             setupExcelDropdownFilter('filter-process', masterRows.map(r => r[16]));
             setupExcelDropdownFilter('filter-usage', masterRows.map(r => r[18]));
 
-            // 고속 로컬 연산 엔진으로 렌더링 위임
             applyFiltersAndRender();
 
         } catch (err) { console.error(err); }
     }
 
-    /* 💡 [대수술 개량] 브라우저 캐시 기반의 고속 다중 필터 & 정렬 & 화면 그리기 결합 제어엔진 */
     function applyFiltersAndRender() {
         if(globalCachedRows.length === 0) return;
 
         const allAvgDensities = Object.values(globalBeanAverages).map(b => b.avgDensity).filter(v => v !== null);
         const allAvgMoistures = Object.values(globalBeanAverages).map(b => b.avgMoisture).filter(v => v !== null);
 
-        // DOM 필터 기입값 동적 수집
         const searchKeyword = document.getElementById('filter-search').value.toLowerCase().trim();
         const countryFilter = document.getElementById('filter-country').value;
+        const varietyFilter = document.getElementById('filter-variety').value; // 💡 품종 변수 수집
         const processFilter = document.getElementById('filter-process').value;
         const usageFilter = document.getElementById('filter-usage').value;
-        const sortCriteria = document.getElementById('sort-select').value;
 
-        // 원본 구조 보존형 가공 객체배열 빌드
         let displayData = globalCachedRows.map((row, index) => {
             return {
                 originalIndex: index + 2,
@@ -501,9 +508,9 @@
                 region: row[9] || '-',
                 farm: row[10] || '-',
                 producer: row[11] || '-',
-                altMin: row[12] || '-',
-                altMax: row[13] || '-',
-                altAvg: row[14] || '-',
+                altMin: parseFloat(row[12]) || 0,
+                altMax: parseFloat(row[13]) || 0,
+                altAvg: parseFloat(row[14]) || 0,
                 variety: row[15] || '-',
                 process: row[16] || '-',
                 importer: row[17] || '-',
@@ -517,21 +524,22 @@
                 rawStock: row[3] || '0',
                 rawPrice: row[5] || '-',
                 rawDensity: row[21] || '-',
-                rawMoisture: row[22] || '-'
+                rawMoisture: row[22] || '-',
+                rawAltMin: row[12] || '-',
+                rawAltMax: row[13] || '-',
+                rawAltAvg: row[14] || '-'
             };
         });
 
-        // 1. 하위 탭 (전체 vs 즐겨찾기) 필터 적용
         if (currentSubTab === 'fav') {
             displayData = displayData.filter(item => localStorage.getItem('GB_FAV_' + item.id) === 'true');
         }
 
-        // 2. 엑셀식 다중 드롭다운 필터 규칙 적용
         if (countryFilter !== 'all') displayData = displayData.filter(item => item.country === countryFilter);
+        if (varietyFilter !== 'all') displayData = displayData.filter(item => item.variety === varietyFilter); // 💡 품종 필터링 룰 삽입
         if (processFilter !== 'all') displayData = displayData.filter(item => item.process === processFilter);
         if (usageFilter !== 'all') displayData = displayData.filter(item => item.usage === usageFilter);
 
-        // 3. 키워드 검색식 와일드카드 필터 적용 (이름, 노트, 품종, 생산자 등 통합 대조)
         if (searchKeyword) {
             displayData = displayData.filter(item => {
                 const combinedText = `${item.name} ${item.country} ${item.region} ${item.farm} ${item.producer} ${item.variety} ${item.note} ${item.usage}`.toLowerCase();
@@ -539,51 +547,72 @@
             });
         }
 
-        // 4. 다차원 소팅 분기 레이더 작동
-        if (sortCriteria === 'default') {
+        // 💡 [3번 구현] 엑셀식 동적 다차원 정렬 알고리즘 브랜치 작동
+        if (currentSortCol !== 'default') {
+            displayData.sort((a, b) => {
+                let valA = a[currentSortCol];
+                let valB = b[currentSortCol];
+                
+                // 데이터가 공백이거나 하이픈인 비어있는 열은 정렬 시 언제나 맨 아래로 밀리도록 설계
+                if (valA === '-' || valA === '') return 1;
+                if (valB === '-' || valB === '') return -1;
+
+                if (typeof valA === 'number' && typeof valB === 'number') {
+                    return currentSortOrder === 'asc' ? valA - valB : valB - valA;
+                } else {
+                    return currentSortOrder === 'asc' ? String(valA).localeCompare(String(valB)) : String(valB).localeCompare(String(valA));
+                }
+            });
+        } else {
+            // 기본 정렬: 재고있음 우선
             displayData.sort((a, b) => {
                 if (a.status === 'O' && b.status !== 'O') return -1;
                 if (a.status !== 'O' && b.status === 'O') return 1;
                 return 0;
             });
-        } else if (sortCriteria === 'name_asc') {
-            displayData.sort((a, b) => a.name.localeCompare(b.name));
-        } else if (sortCriteria === 'price_desc') {
-            displayData.sort((a, b) => b.price - a.price);
-        } else if (sortCriteria === 'price_asc') {
-            displayData.sort((a, b) => a.price - b.price);
-        } else if (sortCriteria === 'density_desc') {
-            displayData.sort((a, b) => b.density - a.density);
-        } else if (sortCriteria === 'moisture_desc') {
-            displayData.sort((a, b) => b.moisture - a.moisture);
-        } else if (sortCriteria === 'stock_desc') {
-            displayData.sort((a, b) => b.stock - a.stock);
         }
 
-        // 결과 예외 처리
         if (displayData.length === 0) {
             document.getElementById('listContentArea').innerHTML = '<h3 style="color:#7f8c8d; text-align:center; padding:30px;">조건에 일치하는 생두 검색 결과가 없습니다. 필터를 변경해 보세요.</h3>';
             return;
         }
 
-        // HTML 그리기 스크랩 조립
+        // 💡 [1번, 3번 가이드라인 구현] 각 헤더 `<th>` 영역 클릭 시 정렬 핸들러 작동 및 화살표 박음 처리
         let html = `
         <div class="table-wrapper">
             <table>
                 <thead>
                     <tr>
-                        <th style="background-color: #34495e; color:white; min-width:140px;">정보 관리</th><th>재고상태</th>
-                        <th style="min-width: 200px;">커피 이름</th><th class="col-stock">잔여량</th><th class="col-year">생산 연도</th>
-                        <th class="col-buydate">구매일자</th><th class="col-price">최종 단가(원)</th><th class="col-indate">최종 입고일자</th>
-                        <th class="col-country">생산국</th><th class="col-region">상세 지역</th><th class="col-farm">농장/조합</th>
-                        <th class="col-producer">생산자</th><th class="col-altavg">평균 재배고도(m)</th><th class="col-variety">품종</th>
-                        <th class="col-process">가공</th><th class="col-importer">수입사</th><th class="col-usage">생두 용도</th>
-                        <th class="col-note">부가 정보</th><th class="col-mdate" style="background-color: #f39c12; color:white;">최종 측정일자</th>
-                        <th class="col-density" style="background-color: #f39c12; color:white;">밀도(g/L)</th><th class="col-density-pct" style="background-color: #f39c12; color:white;">밀도(백분위)</th>
-                        <th class="col-density-avg" style="background-color: #f39c12; color:white;">밀도(평균)</th><th class="col-moisture" style="background-color: #f39c12; color:white;">수분(%)</th>
-                        <th class="col-moisture-pct" style="background-color: #f39c12; color:white;">수분(백분위)</th><th class="col-moisture-avg" style="background-color: #f39c12; color:white;">수분(평균)</th>
-                        <th class="col-size" style="background-color: #f39c12; color:white;">크기</th><th class="col-etc" style="background-color: #f39c12; color:white;">기타</th>
-                        <th class="col-altmin">재배고도 최저(m)</th><th class="col-altmax">재배고도 최고(m)</th><th class="col-id">고유 ID</th>
+                        <th style="background-color: #34495e; color:white; min-width:140px; cursor:default;">정보 관리</th>
+                        <th onclick="handleHeaderSort('status')">재고상태${getSortIndicator('status')}</th>
+                        <th onclick="handleHeaderSort('name')" style="min-width: 200px;">커피 이름${getSortIndicator('name')}</th>
+                        <th onclick="handleHeaderSort('stock')" class="col-stock">잔여량${getSortIndicator('stock')}</th>
+                        <th onclick="handleHeaderSort('year')" class="col-year">생산 연도${getSortIndicator('year')}</th>
+                        <th onclick="handleHeaderSort('buyDate')" class="col-buydate">구매일자${getSortIndicator('buyDate')}</th>
+                        <th onclick="handleHeaderSort('price')" class="col-price">최종 단가(원)${getSortIndicator('price')}</th>
+                        <th onclick="handleHeaderSort('inDate')" class="col-indate">최종 입고일자${getSortIndicator('inDate')}</th>
+                        <th onclick="handleHeaderSort('country')" class="col-country">생산국${getSortIndicator('country')}</th>
+                        <th onclick="handleHeaderSort('region')" class="col-region">상세 지역${getSortIndicator('region')}</th>
+                        <th onclick="handleHeaderSort('farm')" class="col-farm">농장/조합${getSortIndicator('farm')}</th>
+                        <th onclick="handleHeaderSort('producer')" class="col-producer">생산자${getSortIndicator('producer')}</th>
+                        <th onclick="handleHeaderSort('altAvg')" class="col-altavg">평균 재배고도(m)${getSortIndicator('altAvg')}</th>
+                        <th onclick="handleHeaderSort('variety')" class="col-variety">품종${getSortIndicator('variety')}</th>
+                        <th onclick="handleHeaderSort('process')" class="col-process">가공${getSortIndicator('process')}</th>
+                        <th onclick="handleHeaderSort('importer')" class="col-importer">수입사${getSortIndicator('importer')}</th>
+                        <th onclick="handleHeaderSort('usage')" class="col-usage">생두 용도${getSortIndicator('usage')}</th>
+                        <th onclick="handleHeaderSort('note')" class="col-note">부가 정보${getSortIndicator('note')}</th>
+                        <th onclick="handleHeaderSort('lastMeasure')" class="col-mdate" style="background-color: #f39c12; color:white;">최종 측정일자${getSortIndicator('lastMeasure')}</th>
+                        <th onclick="handleHeaderSort('density')" class="col-density" style="background-color: #f39c12; color:white;">밀도(g/L)${getSortIndicator('density')}</th>
+                        <th class="col-density-pct" style="background-color: #f39c12; color:white; cursor:default;">밀도(백분위)</th>
+                        <th class="col-density-avg" style="background-color: #f39c12; color:white; cursor:default;">밀도(평균)</th>
+                        <th onclick="handleHeaderSort('moisture')" class="col-moisture" style="background-color: #f39c12; color:white;">수분(%)${getSortIndicator('moisture')}</th>
+                        <th class="col-moisture-pct" style="background-color: #f39c12; color:white; cursor:default;">수분(백분위)</th>
+                        <th class="col-moisture-avg" style="background-color: #f39c12; color:white; cursor:default;">수분(평균)</th>
+                        <th onclick="handleHeaderSort('size')" class="col-size" style="background-color: #f39c12; color:white;">크기${getSortIndicator('size')}</th>
+                        <th onclick="handleHeaderSort('etc')" class="col-etc" style="background-color: #f39c12; color:white;">기타${getSortIndicator('etc')}</th>
+                        <th onclick="handleHeaderSort('altMin')" class="col-altmin">재배고도 최저(m)${getSortIndicator('altMin')}</th>
+                        <th onclick="handleHeaderSort('altMax')" class="col-altmax">재배고도 최고(m)${getSortIndicator('altMax')}</th>
+                        <th onclick="handleHeaderSort('id')" class="col-id">고유 ID${getSortIndicator('id')}</th>
                     </tr>
                 </thead>
                 <tbody>`;
@@ -616,7 +645,7 @@
                         <td class="col-stock">${item.rawStock} kg</td><td class="col-year">${item.year}</td><td class="col-buydate">${item.buyDate}</td>
                         <td class="col-price">${priceFmt}</td><td class="col-indate">${item.inDate}</td><td class="col-country">${item.country}</td>
                         <td class="col-region">${item.region}</td><td class="col-farm">${item.farm}</td><td class="col-producer">${item.producer}</td>
-                        <td class="col-altavg">${item.altAvg}</td><td class="col-variety">${item.variety}</td><td class="col-process">${item.process}</td>
+                        <td class="col-altavg">${item.rawAltAvg}</td><td class="col-variety">${item.variety}</td><td class="col-process">${item.process}</td>
                         <td class="col-importer">${item.importer}</td><td class="col-usage">${item.usage}</td>
                         <td class="col-note" style="text-align:left; max-width:150px; overflow:hidden; text-overflow:ellipsis;">${item.note}</td>
                         <td class="col-mdate" style="background-color: #fffaf0;">${item.lastMeasure}</td><td class="col-density" style="background-color: #fffaf0;">${item.rawDensity}</td>
@@ -624,7 +653,7 @@
                         <td class="col-moisture" style="background-color: #fffaf0;">${item.rawMoisture}</td><td class="col-moisture-pct" style="background-color: #fffaf0; font-weight:bold; color:#16a085;">${mPctDisp}</td>
                         <td class="col-moisture-avg" style="background-color: #fffaf0; color:#7f8c8d;">${mAvgDisp}</td><td class="col-size" style="background-color: #fffaf0;">${item.size}</td>
                         <td class="col-etc" style="background-color: #fffaf0; text-align:left;">${item.etc}</td>
-                        <td class="col-altmin">${item.altMin}</td><td class="col-altmax">${item.altMax}</td><td class="col-id">${id}</td>
+                        <td class="col-altmin">${item.rawAltMin}</td><td class="col-altmax">${item.rawAltMax}</td><td class="col-id">${id}</td>
                     </tr>`;
         });
         html += `</tbody></table></div>`;
@@ -646,10 +675,10 @@
             <table style="width:100%; font-size:12px; margin-top:10px; background:white; white-space:normal;">
                 <thead>
                     <tr style="background:#edf2f7; color:#2c3e50;">
-                        <th style="padding:8px; border:1px solid #cbd5e0;">표시 현황</th><th style="padding:8px; border:1px solid #cbd5e0;">날짜 정보</th>
-                        <th style="padding:8px; border:1px solid #cbd5e0;">재고 변동</th><th style="padding:8px; border:1px solid #cbd5e0;">밀도</th>
-                        <th style="padding:8px; border:1px solid #cbd5e0;">수분</th><th style="padding:8px; border:1px solid #cbd5e0;">크기</th>
-                        <th style="padding:8px; border:1px solid #cbd5e0;">특이사항</th><th style="padding:8px; border:1px solid #cbd5e0; background-color:#e2e8f0;">데이터 관리</th>
+                        <th style="padding:8px; border:1px solid #cbd5e0; cursor:default;">표시 현황</th><th style="padding:8px; border:1px solid #cbd5e0; cursor:default;">날짜 정보</th>
+                        <th style="padding:8px; border:1px solid #cbd5e0; cursor:default;">재고 변동</th><th style="padding:8px; border:1px solid #cbd5e0; cursor:default;">밀도</th>
+                        <th style="padding:8px; border:1px solid #cbd5e0; cursor:default;">수분</th><th style="padding:8px; border:1px solid #cbd5e0; cursor:default;">크기</th>
+                        <th style="padding:8px; border:1px solid #cbd5e0; cursor:default;">특이사항</th><th style="padding:8px; border:1px solid #cbd5e0; background-color:#e2e8f0; cursor:default;">데이터 관리</th>
                     </tr>
                 </thead>
                 <tbody>`;
@@ -796,7 +825,7 @@
         updatedRow[2] = finalStatus; updatedRow[3] = finalStock;  
         if(upPrice) updatedRow[5] = upPrice; 
         if(upInDate) updatedRow[6] = upInDate; if(upUsage) updatedRow[18] = upUsage; 
-        if(upMeasureDate) updatedRow[20] = upMeasureDate; if(upDensity) updatedRow[21] = upDensity; 
+        if(upMeasureDate) updatedRow[20] = updatedRow[20] = upMeasureDate; if(upDensity) updatedRow[21] = upDensity; 
         if(upMoisture) updatedRow[22] = upMoisture; if(upSize) updatedRow[23] = upSize; 
         if(upEtc) updatedRow[24] = upEtc;   
 
